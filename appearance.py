@@ -131,7 +131,7 @@ def build(app):
         app.widgets.append(entry)
     copy_login = button(rail, 'Скопировать /login', app.copy_login, small=True)
     copy_login.pack(fill='x', pady=(10, 0))
-    note = label(rail, 'После входа в игру открой чат,\nнажми Ctrl+V и Enter.\nПароль не сохраняется.', 9, MUTED)
+    note = label(rail, 'Скопируй /login перед запуском.\nВ игре: чат → Ctrl+V → Enter.\nПароль не сохраняется.', 9, MUTED)
     note.configure(justify='left', wraplength=205)
     note.pack(anchor='w', pady=(12, 0))
     tk.Frame(rail, bg=BORDER, height=1).pack(fill='x', pady=23)

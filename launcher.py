@@ -15,6 +15,7 @@ import uuid
 from config import DATA, GAME, SERVER, FORGE, MINECRAFT, PHOTO, VERSION
 from updater import fetch_manifest, sync_files, check_files
 from gunpacks import check_gunpacks, sync_gunpacks
+from game_launch import launch_game
 
 ROOT = DATA
 DEFAULTS = {'nickname': 'Player', 'ram': '4', 'server': SERVER, 'forge': FORGE}
@@ -227,14 +228,9 @@ class Launcher:
             if settings['server']:
                 options['quickPlayMultiplayer'] = settings['server']
             command = mcl.command.get_minecraft_command(version, GAME, options)
-            callback['setStatus']('Игра запущена. Журнал: minecraft/game-output.log')
-            with (GAME / 'game-output.log').open('w', encoding='utf-8') as log:
-                process = subprocess.Popen(command, cwd=GAME, stdout=log, stderr=subprocess.STDOUT,
-                                           creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
-                code = process.wait()
-            if code:
-                raise RuntimeError(f'Игра завершилась с кодом {code}. Пришли game-output.log или logs/latest.log из папки игры.')
-            callback['setStatus']('Игра закрыта. Можно запустить снова.')
+            callback['setStatus']('Запуск Minecraft… Лаунчер закроется автоматически.')
+            self.game_process = launch_game(command, GAME)
+            self.events.put(('game_started', None))
         except Exception as exc:
             self.events.put(('error', str(exc)))
         finally:
@@ -267,11 +263,14 @@ class Launcher:
                 self.busy = False
                 for w in self.widgets:
                     w.configure(state='normal')
+            elif kind == 'game_started':
+                self.root.destroy()
+                return
         self.root.after(100, self.poll)
 
     def close(self):
         if self.busy:
-            messagebox.showinfo('SDOcraft', 'Дождись завершения установки или закрой игру перед выходом из лаунчера.')
+            messagebox.showinfo('SDOcraft', 'Дождись завершения установки или запуска игры.')
             return
         self.root.destroy()
 
