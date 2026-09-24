@@ -119,6 +119,16 @@ class UpdaterTests(unittest.TestCase):
         with patch.object(updater, 'urlopen', side_effect=URLError('offline')):
             self.assertEqual(updater.fetch_manifest(self.root), self.data)
 
+    def test_maxstuff_uses_only_its_official_modrinth_project(self):
+        updated = copy.deepcopy(self.data)
+        item = updated['files'][0]
+        item['mod_ids'] = ['maxstuff']
+        item['url'] = 'https://cdn.modrinth.com/data/zUHF7oUB/versions/gcj2HDH2/maxstuff-legacy-1.8.3_hotfix.jar'
+        updater.validate_manifest(updated)
+        item['url'] = item['url'].replace('zUHF7oUB', 'anotherProject')
+        with self.assertRaises(ValueError):
+            updater.validate_manifest(updated)
+
     def test_photo_bootstrap_does_not_download_mods(self):
         with patch.object(updater, 'urlopen', side_effect=self.open) as http:
             self.assertEqual(updater.sync_files(self.root, self.data, photo_only=True), 1)

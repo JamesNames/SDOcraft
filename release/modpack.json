@@ -1,0 +1,112 @@
+{
+  "schema": 1,
+  "version": "v1.3.2",
+  "minecraft": "1.20.1",
+  "forge": "47.4.0",
+  "files": [
+    {
+      "path": "mods/[SBW089]dragonrise_reforge-1.4.1.01-hotfix1.jar",
+      "size": 35287787,
+      "sha256": "5370c17edf8eb204845fe73510a4a5043da89905c93fde38ef908a566df68c50",
+      "url": "https://github.com/JamesNames/SDOcraft/releases/download/v1.3.0/mod-01.jar",
+      "mod_ids": [
+        "dragonrise_reforge"
+      ]
+    },
+    {
+      "path": "mods/ashvehicle-1.20.1-4.6-8.9.jar",
+      "size": 18695193,
+      "sha256": "8d2c84729e891c0f77620c7e38f11f36e5a423aa6d8c42e12839461ba30e9e7f",
+      "url": "https://github.com/JamesNames/SDOcraft/releases/download/v1.3.0/mod-02.jar",
+      "mod_ids": [
+        "ashvehicle"
+      ]
+    },
+    {
+      "path": "mods/curios-forge-5.14.1+1.20.1.jar",
+      "size": 398066,
+      "sha256": "1e817919a35b37cf30524aaec73f0ca5130452f23f168f844854df282eb8e51f",
+      "url": "https://github.com/JamesNames/SDOcraft/releases/download/v1.3.0/mod-03.jar",
+      "mod_ids": [
+        "curios"
+      ]
+    },
+    {
+      "path": "mods/endlessammo-2.0.jar",
+      "size": 113576,
+      "sha256": "30527d016f12d1862aeaf21d303d2f017138127cd722163c07d7e348e3223002",
+      "url": "https://github.com/JamesNames/SDOcraft/releases/download/v1.3.0/mod-04.jar",
+      "mod_ids": [
+        "endlessammo"
+      ]
+    },
+    {
+      "path": "mods/geckolib-forge-1.20.1-4.8.2.jar",
+      "size": 1038979,
+      "sha256": "a2e4bcc986ce360f4e85d545a86b04c8c9350543ebd17069b6a44c0a8939ffdc",
+      "url": "https://github.com/JamesNames/SDOcraft/releases/download/v1.3.0/mod-05.jar",
+      "mod_ids": [
+        "geckolib"
+      ]
+    },
+    {
+      "path": "mods/jei-1.20.1-forge-15.20.0.129.jar",
+      "size": 1409642,
+      "sha256": "5e5af05aa082f5844c7b3ed0b3bd9374e160ae1914906f71d90c5656e4e80039",
+      "url": "https://github.com/JamesNames/SDOcraft/releases/download/v1.3.0/mod-06.jar",
+      "mod_ids": [
+        "jei"
+      ]
+    },
+    {
+      "path": "mods/kotlinforforge-4.12.0-all.jar",
+      "size": 7442998,
+      "sha256": "6a66c6a68ec09f8717cdbf06883394f0ee24d7cd826b7134a0f81839e8e720ae",
+      "url": "https://github.com/JamesNames/SDOcraft/releases/download/v1.3.0/mod-07.jar",
+      "mod_ids": []
+    },
+    {
+      "path": "mods/superbwarfare-0.8.9-final-mc1.20.1-6effe4385-all.jar",
+      "size": 31691008,
+      "sha256": "6eece0df9c927bddee3bd373fe90a2bbcba7157e9408ee0f94d13e04dc638395",
+      "url": "https://github.com/JamesNames/SDOcraft/releases/download/v1.3.0/mod-08.jar",
+      "mod_ids": [
+        "superbwarfare"
+      ]
+    },
+    {
+      "path": "mods/tacz-1.20.1-1.1.8-hotfix.jar",
+      "size": 57465167,
+      "sha256": "9ed8ada1283ed7a793a70cc1b51c4a340f367ce84707e1a7b8cf21ee3d288d77",
+      "url": "https://github.com/JamesNames/SDOcraft/releases/download/v1.3.0/mod-09.jar",
+      "mod_ids": [
+        "tacz"
+      ]
+    },
+    {
+      "path": "mods/tl_skin_cape_forge_1.20-1.38.jar",
+      "size": 1180127,
+      "sha256": "a6aa1286aa847ff9b6029c8901bbad30e05b4bcbc967142125c35499dfe5f5d3",
+      "url": "https://github.com/JamesNames/SDOcraft/releases/download/v1.3.0/mod-10.jar",
+      "mod_ids": [
+        "tlskincape"
+      ]
+    },
+    {
+      "path": "mods/maxstuff-legacy-1.8.3_hotfix.jar",
+      "size": 33737826,
+      "sha256": "ea4495edbcdf96b085130ad05ddc2b5092fc54c162aa7ae4a327b84ef328d0f2",
+      "url": "https://cdn.modrinth.com/data/zUHF7oUB/versions/gcj2HDH2/maxstuff-legacy-1.8.3_hotfix.jar",
+      "mod_ids": [
+        "maxstuff"
+      ]
+    },
+    {
+      "path": "assets/squad.webp",
+      "size": 542840,
+      "sha256": "f68b4a0a44880214ed6eed22f9aa13bf69bb0106042bd16ca8f0dd099dc71a93",
+      "url": "https://github.com/JamesNames/SDOcraft/releases/download/v1.3.0/squad.webp",
+      "mod_ids": []
+    }
+  ]
+}

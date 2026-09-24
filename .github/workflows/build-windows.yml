@@ -33,6 +33,28 @@ jobs:
           path: dist/SDOcraft.exe
           if-no-files-found: error
           retention-days: 30
+  publish-version:
+    if: github.event_name != 'release' && github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          name: SDOcraft-Windows
+          path: dist
+      - name: Publish a prepared version once
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          python -m pip install certifi
+          python tools/publish_release.py
   attach-to-release:
     if: github.event_name == 'release'
     needs: build

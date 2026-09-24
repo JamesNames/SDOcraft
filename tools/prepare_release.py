@@ -9,15 +9,15 @@ import tomllib
 from urllib.parse import quote
 import zipfile
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
-from config import MINECRAFT, FORGE, REPOSITORY
+from config import MINECRAFT, FORGE, REPOSITORY, VERSION
 
 
 def prepare(mods, photo, output, tag):
     files = sorted(mods.glob('*.jar'))
     if not files:
-        raise ValueError('No .jar mods found')
+        raise ValueError('Не найдены моды .jar')
     if output.exists() and any(output.iterdir()):
-        raise ValueError('Output directory must be empty')
+        raise ValueError('Папка результата должна быть пустой')
     output.mkdir(parents=True, exist_ok=True)
     manifest = {'schema': 1, 'version': tag, 'minecraft': MINECRAFT, 'forge': FORGE, 'files': []}
     for index, file in enumerate([*files, photo], 1):
@@ -37,7 +37,7 @@ def prepare(mods, photo, output, tag):
                                   'url': f'https://github.com/{REPOSITORY}/releases/download/{quote(tag, safe="")}/{asset}',
                                   'mod_ids': ids})
     (output / 'modpack.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=2), encoding='utf-8')
-    print(f'Created {len(manifest["files"])} assets + modpack.json in {output}')
+    print(f'Создано файлов: {len(manifest["files"])} + modpack.json. Папка: {output}')
 
 
 if __name__ == '__main__':
@@ -45,6 +45,6 @@ if __name__ == '__main__':
     parser.add_argument('--mods', type=Path, required=True)
     parser.add_argument('--photo', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--tag', default='v1.3.0')
+    parser.add_argument('--tag', default='v' + VERSION)
     args = parser.parse_args()
     prepare(args.mods, args.photo, args.output, args.tag)

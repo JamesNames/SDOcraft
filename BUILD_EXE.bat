@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 setlocal
 cd /d "%~dp0"
 if exist .venv\Scripts\python.exe goto ready
@@ -9,10 +10,10 @@ if errorlevel 1 goto fail
 if errorlevel 1 goto fail
 .venv\Scripts\python.exe -m PyInstaller --noconfirm --clean --onefile --windowed --name SDOcraft --icon branding/sdocraft.ico --add-data "branding;branding" --collect-all minecraft_launcher_lib launcher.py
 if errorlevel 1 goto fail
-echo Ready: dist\SDOcraft.exe
+echo Готово: dist\SDOcraft.exe
 pause
 exit /b 0
 :fail
-echo Build failed. Install Python 3.12 and check the error above.
+echo Ошибка сборки. Установи Python 3.12 и проверь сообщение выше.
 pause
 exit /b 1

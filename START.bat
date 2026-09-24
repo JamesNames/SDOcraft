@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 setlocal
 cd /d "%~dp0"
 if exist .venv\Scripts\python.exe goto ready
@@ -14,6 +15,6 @@ if errorlevel 1 goto fail
 if errorlevel 1 goto fail
 exit /b 0
 :fail
-echo Install Python 3.12 or 3.13 from python.org, check your Internet connection and try again.
+echo Установи Python 3.12 или 3.13 с python.org, проверь интернет и повтори.
 pause
 exit /b 1

@@ -14,6 +14,7 @@ from tkinter import ttk, messagebox, filedialog
 import uuid
 from config import DATA, GAME, SERVER, FORGE, MINECRAFT, PHOTO, VERSION
 from updater import fetch_manifest, sync_files, check_files
+from gunpacks import check_gunpacks, sync_gunpacks
 
 ROOT = DATA
 DEFAULTS = {'nickname': 'Player', 'ram': '4', 'server': SERVER, 'forge': FORGE}
@@ -26,19 +27,35 @@ def offline_uuid(name):
     return uuid.UUID(bytes=hashlib.md5(('OfflinePlayer:' + name).encode('utf-8')).digest(), version=3).hex
 
 
+def russian_status(value):
+    text = str(value)
+    translations = {
+        'Download Libraries': 'Загрузка библиотек',
+        'Download Assets': 'Загрузка ресурсов Minecraft',
+        'Install java runtime': 'Установка Java',
+        'Installation complete': 'Установка завершена',
+    }
+    if text in translations:
+        return translations[text]
+    for original, translated in [('Download ', 'Загрузка '), ('Running processor ', 'Установка компонента ')]:
+        if text.startswith(original):
+            return translated + text[len(original):]
+    return text
+
+
 def validate(settings):
     if not re.fullmatch(r'[A-Za-z0-9_]{3,16}', settings['nickname']):
-        raise ValueError('Нік: 3–16 латинських літер, цифр або _.')
+        raise ValueError('Ник: 3–16 латинских букв, цифр или _.')
     ram = int(settings['ram'])
     if not 2 <= ram <= 32:
-        raise ValueError('Оперативна пам’ять: від 2 до 32 ГБ.')
+        raise ValueError('Оперативная память: от 2 до 32 ГБ.')
     if not re.fullmatch(r'47\.\d+\.\d+', settings['forge']):
-        raise ValueError('Forge для 1.20.1 має формат 47.x.x.')
+        raise ValueError('Forge для 1.20.1 имеет формат 47.x.x.')
     if tuple(map(int, settings['forge'].split('.'))) < (47, 4, 0):
-        raise ValueError('DragonRise з цієї збірки вимагає Forge 47.4.0 або новіший.')
+        raise ValueError('DragonRise из этой сборки требует Forge 47.4.0 или новее.')
     server = settings['server']
     if server and (re.search(r'\s|[/\\]', server) or len(server) > 255):
-        raise ValueError('Введи адресу сервера без https:// і пробілів.')
+        raise ValueError('Введи адрес сервера без https:// и пробелов.')
     return settings
 
 
@@ -90,12 +107,12 @@ class Launcher:
         def run():
             try:
                 manifest = fetch_manifest(ROOT, lambda text: self.events.put(('status', text)))
-                self.events.put(('status', 'Завантаження оформлення…'))
+                self.events.put(('status', 'Загрузка оформления…'))
                 sync_files(ROOT, manifest, photo_only=True)
                 self.events.put(('photo', None))
-                self.events.put(('status', 'Готово. Натисни «Грати», щоб перевірити й завантажити збірку.'))
+                self.events.put(('status', 'Готово. Нажми «Играть», чтобы проверить и загрузить сборку.'))
             except Exception:
-                self.events.put(('status', 'Фото поки недоступне. Натисни «Грати», щоб повторити завантаження.'))
+                self.events.put(('status', 'Фото пока недоступно. Нажми «Играть», чтобы повторить загрузку.'))
             finally:
                 self.events.put(('done', None))
         threading.Thread(target=run, daemon=True).start()
@@ -107,14 +124,14 @@ class Launcher:
     def copy_login(self):
         password = self.password.get()
         if not password:
-            messagebox.showinfo('Пароль сервера', 'Введи пароль від /login на сервері.')
+            messagebox.showinfo('Пароль сервера', 'Введи пароль для /login на сервере.')
             return
         if any(char.isspace() or ord(char) < 32 for char in password):
-            messagebox.showerror('Пароль сервера', 'Для команди /login пароль має бути без пробілів і перенесень рядка.')
+            messagebox.showerror('Пароль сервера', 'Для команды /login пароль должен быть без пробелов и переносов строки.')
             return
         self.root.clipboard_clear()
         self.root.clipboard_append('/login ' + password)
-        self.status.set('Команду /login скопійовано. У грі відкрий чат → Ctrl+V → Enter.')
+        self.status.set('Команда /login скопирована. В игре открой чат → Ctrl+V → Enter.')
 
     def open_folder(self, path):
         path.mkdir(parents=True, exist_ok=True)
@@ -124,20 +141,20 @@ class Launcher:
             subprocess.Popen(['open' if sys.platform == 'darwin' else 'xdg-open', str(path)])
 
     def add_mods(self):
-        files = filedialog.askopenfilenames(title='Клієнтські моди Forge 1.20.1', filetypes=[('Java mods', '*.jar')])
+        files = filedialog.askopenfilenames(title='Клиентские моды Forge 1.20.1', filetypes=[('Моды Java', '*.jar')])
         try:
             for f in files:
                 src = Path(f)
                 dst = GAME / 'mods' / src.name
                 if src.resolve() == dst.resolve():
                     continue
-                if dst.exists() and not messagebox.askyesno('Замінити мод?', src.name):
+                if dst.exists() and not messagebox.askyesno('Заменить мод?', src.name):
                     continue
                 shutil.copy2(src, dst)
             if files:
-                self.events.put(('status', 'Моди додано. Їхні залежності також потрібно додати.'))
+                self.events.put(('status', 'Моды добавлены. Не забудь установить их зависимости.'))
         except OSError as exc:
-            messagebox.showerror('Не вдалося додати мод', str(exc))
+            messagebox.showerror('Не удалось добавить мод', str(exc))
 
     def check_mods(self):
         self.busy = True
@@ -147,11 +164,12 @@ class Launcher:
             try:
                 manifest = fetch_manifest(ROOT, lambda text: self.events.put(('status', text)))
                 missing = [item['path'] for item in check_files(ROOT, manifest)]
+                missing.extend(check_gunpacks(ROOT, manifest))
                 if missing:
-                    self.events.put(('info', 'Потрібно встановити / відновити:\n\n' + '\n'.join(missing) +
-                                     '\n\nНатисни «Грати» або «Встановити / відновити»: файли завантажаться з GitHub.'))
+                    self.events.put(('info', 'Нужно установить или восстановить:\n\n' + '\n'.join(missing) +
+                                     '\n\nНажми «Играть» или «Восстановить»: файлы загрузятся из интернета.'))
                 else:
-                    self.events.put(('info', 'Усі файли збірки перевірено за SHA-256.'))
+                    self.events.put(('info', 'Файлы сборки и ресурсы оружейных пакетов проверены.'))
             except Exception as exc:
                 self.events.put(('error', str(exc)))
             finally:
@@ -165,7 +183,7 @@ class Launcher:
             settings = validate({k: v.get().strip() for k, v in self.vars.items()})
             save_settings(settings)
         except (ValueError, OSError) as exc:
-            messagebox.showerror('Налаштування', str(exc))
+            messagebox.showerror('Настройки', str(exc))
             return
         self.busy = True
         for w in self.widgets:
@@ -176,31 +194,32 @@ class Launcher:
     def worker(self, settings, repair):
         try:
             import minecraft_launcher_lib as mcl
-            callback = {'setStatus': lambda s: self.events.put(('status', str(s))),
+            callback = {'setStatus': lambda s: self.events.put(('status', russian_status(s))),
                         'setProgress': lambda v: self.events.put(('progress', v)),
                         'setMax': lambda v: self.events.put(('max', max(v, 1)))}
             manifest = fetch_manifest(ROOT, callback['setStatus'])
             callback['setMax'](100)
             count = sync_files(ROOT, manifest, callback['setStatus'], callback['setProgress'])
+            sync_gunpacks(ROOT, manifest, callback['setStatus'])
             self.events.put(('photo', None))
-            callback['setStatus'](f'Збірка готова. Завантажено файлів: {count}.')
+            callback['setStatus'](f'Сборка готова. Загружено файлов: {count}.')
             forge = '1.20.1-' + settings['forge']
             version = mcl.forge.forge_to_installed_version(forge)
             marker = GAME / ('sdocraft-' + forge + '.ready')
             java = mcl.runtime.get_executable_path('java-runtime-gamma', GAME)
             if not java or not Path(java).is_file():
-                callback['setStatus']('Встановлення Java 17…')
+                callback['setStatus']('Установка Java 17…')
                 mcl.runtime.install_jvm_runtime('java-runtime-gamma', GAME, callback=callback)
                 java = mcl.runtime.get_executable_path('java-runtime-gamma', GAME)
             if not java:
-                raise RuntimeError('Не вдалося встановити Java 17. Перевір інтернет і повтори.')
+                raise RuntimeError('Не удалось установить Java 17. Проверь интернет и повтори.')
             if repair or not marker.exists() or not (GAME / 'versions' / version / (version + '.json')).is_file():
                 marker.unlink(missing_ok=True)
-                callback['setStatus']('Встановлення Minecraft і Forge. Це може тривати кілька хвилин…')
+                callback['setStatus']('Установка Minecraft и Forge. Это может занять несколько минут…')
                 mcl.forge.install_forge_version(forge, GAME, callback=callback, java=java)
                 marker.write_text('complete', encoding='utf-8')
             if repair:
-                callback['setStatus']('Встановлення завершено. Можна грати!')
+                callback['setStatus']('Установка завершена. Можно играть!')
                 return
             options = {'username': settings['nickname'], 'uuid': offline_uuid(settings['nickname']),
                        'token': '0', 'executablePath': java, 'launcherName': 'SDOcraft', 'launcherVersion': VERSION,
@@ -208,14 +227,14 @@ class Launcher:
             if settings['server']:
                 options['quickPlayMultiplayer'] = settings['server']
             command = mcl.command.get_minecraft_command(version, GAME, options)
-            callback['setStatus']('Гра працює. Журнал: minecraft/game-output.log')
+            callback['setStatus']('Игра запущена. Журнал: minecraft/game-output.log')
             with (GAME / 'game-output.log').open('w', encoding='utf-8') as log:
                 process = subprocess.Popen(command, cwd=GAME, stdout=log, stderr=subprocess.STDOUT,
                                            creationflags=subprocess.CREATE_NO_WINDOW if os.name == 'nt' else 0)
                 code = process.wait()
             if code:
-                raise RuntimeError(f'Гра завершилася з кодом {code}. Надішли game-output.log або logs/latest.log із папки гри.')
-            callback['setStatus']('Гру закрито. Можна запустити знову.')
+                raise RuntimeError(f'Игра завершилась с кодом {code}. Пришли game-output.log или logs/latest.log из папки игры.')
+            callback['setStatus']('Игра закрыта. Можно запустить снова.')
         except Exception as exc:
             self.events.put(('error', str(exc)))
         finally:
@@ -238,7 +257,7 @@ class Launcher:
             elif kind == 'photo':
                 self.hero.load_photo()
             elif kind == 'info':
-                messagebox.showinfo('Моди збірки', value)
+                messagebox.showinfo('Моды сборки', value)
             elif kind == 'progress':
                 self.progress['value'] = value
             elif kind == 'max':
@@ -252,7 +271,7 @@ class Launcher:
 
     def close(self):
         if self.busy:
-            messagebox.showinfo('SDOcraft', 'Дочекайся завершення встановлення або закрий гру перед виходом із лаунчера.')
+            messagebox.showinfo('SDOcraft', 'Дождись завершения установки или закрой игру перед выходом из лаунчера.')
             return
         self.root.destroy()
 

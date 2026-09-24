@@ -13,7 +13,7 @@ from urllib.request import Request, urlopen
 import uuid
 import zipfile
 import certifi
-from config import REPOSITORY, MANIFEST_URL, MINECRAFT, FORGE
+from config import REPOSITORY, MANIFEST_URL, MINECRAFT, FORGE, VERSION
 
 MAX_MANIFEST = 1024 * 1024
 MAX_FILE = 512 * 1024 * 1024
@@ -27,47 +27,52 @@ def digest(path):
 
 def valid_name(value):
     if not isinstance(value, str) or '\\' in value or ':' in value or any(ord(c) < 32 for c in value):
-        raise ValueError('Некоректний шлях у збірці')
+        raise ValueError('Некорректный путь в сборке')
     path = PurePosixPath(value)
     if path.as_posix() != value or path.is_absolute() or '..' in path.parts or len(path.parts) != 2:
-        raise ValueError('Некоректний шлях у збірці')
+        raise ValueError('Некорректный путь в сборке')
     if path.parts[0] == 'mods' and path.name.endswith('.jar'):
         return value
     if value == 'assets/squad.webp':
         return value
-    raise ValueError('Збірка містить непідтримуваний тип файла')
+    raise ValueError('Сборка содержит неподдерживаемый тип файла')
 
 
 def validate_manifest(data):
     if not isinstance(data, dict) or data.get('schema') != 1:
-        raise ValueError('Непідтримуваний формат збірки')
+        raise ValueError('Неподдерживаемый формат сборки')
     if data.get('minecraft') != MINECRAFT or data.get('forge') != FORGE:
-        raise ValueError('Оновлена збірка потребує нової версії лаунчера. Завантаж SDOcraft.exe із Releases.')
+        raise ValueError('Обновлённая сборка требует новой версии лаунчера. Скачай SDOcraft.exe из Releases.')
     files = data.get('files')
     if not isinstance(files, list) or not 1 <= len(files) <= 500:
-        raise ValueError('Некоректний список файлів')
+        raise ValueError('Некорректный список файлов')
     seen = set()
     total = 0
     for item in files:
         if not isinstance(item, dict):
-            raise ValueError('Некоректний опис файла')
+            raise ValueError('Некорректное описание файла')
         name = valid_name(item.get('path'))
         if name.casefold() in seen:
-            raise ValueError('Дублікат файла у збірці')
+            raise ValueError('Дубликат файла в сборке')
         seen.add(name.casefold())
         if not isinstance(item.get('size'), int) or not 0 < item['size'] <= MAX_FILE:
-            raise ValueError('Некоректний розмір файла')
+            raise ValueError('Некорректный размер файла')
         if not re.fullmatch('[a-f0-9]{64}', str(item.get('sha256', ''))):
-            raise ValueError('Некоректна контрольна сума')
+            raise ValueError('Некорректная контрольная сумма')
         url = urlsplit(item.get('url', ''))
         prefix = f'/{REPOSITORY}/releases/download/'
-        if url.scheme != 'https' or url.netloc != 'github.com' or not url.path.startswith(prefix) or url.query or url.fragment:
-            raise ValueError('Файли збірки мають завантажуватися з Releases SDOcraft')
+        release_asset = url.netloc == 'github.com' and url.path.startswith(prefix)
+        maxstuff_asset = (url.netloc == 'cdn.modrinth.com'
+                          and url.path.startswith('/data/zUHF7oUB/versions/')
+                          and url.path.endswith('.jar') and name.startswith('mods/')
+                          and item.get('mod_ids') == ['maxstuff'])
+        if url.scheme != 'https' or not (release_asset or maxstuff_asset) or url.query or url.fragment:
+            raise ValueError('Недопустимый адрес загрузки файла сборки')
         if not isinstance(item.get('mod_ids', []), list) or not all(isinstance(v, str) for v in item.get('mod_ids', [])):
-            raise ValueError('Некоректні ідентифікатори модів')
+            raise ValueError('Некорректные идентификаторы модов')
         total += item['size']
     if total > 2 * 1024**3 or 'assets/squad.webp' not in seen or not any(n.startswith('mods/') for n in seen):
-        raise ValueError('Неповна або завелика збірка')
+        raise ValueError('Неполная или слишком большая сборка')
     return data
 
 
@@ -78,9 +83,9 @@ def destination(root, item):
     else:
         path = root / relative
     if not path.resolve().is_relative_to(root.resolve()):
-        raise ValueError('Шлях виходить за межі папки SDOcraft')
+        raise ValueError('Путь выходит за пределы папки SDOcraft')
     if path.is_symlink():
-        raise ValueError('Замість файла знайдено символічне посилання')
+        raise ValueError('Вместо файла найдена символическая ссылка')
     return path
 
 
@@ -101,11 +106,11 @@ def cached_manifest(root, name='modpack.json'):
 
 def fetch_manifest(root, status=lambda text: None):
     try:
-        request = Request(MANIFEST_URL, headers={'User-Agent': 'SDOcraft/1.3', 'Cache-Control': 'no-cache'})
+        request = Request(MANIFEST_URL, headers={'User-Agent': f'SDOcraft/{VERSION}', 'Cache-Control': 'no-cache'})
         with urlopen(request, timeout=15, context=CONTEXT) as response:
             payload = response.read(MAX_MANIFEST + 1)
         if len(payload) > MAX_MANIFEST:
-            raise ValueError('Файл опису збірки завеликий')
+            raise ValueError('Файл описания сборки слишком большой')
         data = validate_manifest(json.loads(payload))
         atomic_json(root / 'modpack.json', data)
         return data
@@ -113,8 +118,8 @@ def fetch_manifest(root, status=lambda text: None):
         try:
             data = cached_manifest(root)
         except (OSError, ValueError, KeyError):
-            raise RuntimeError('Не вдалося отримати збірку. Перевір інтернет. Власник має опублікувати modpack.json і файли у GitHub Releases.') from exc
-        status('GitHub недоступний. Використовую збережений список файлів збірки.')
+            raise RuntimeError('Не удалось получить сборку. Проверь интернет. Владелец должен опубликовать modpack.json и файлы в GitHub Releases.') from exc
+        status('GitHub недоступен. Использую сохранённый список файлов сборки.')
         return data
 
 
@@ -128,25 +133,25 @@ def check_files(root, manifest, photo_only=False):
 
 
 def download(item, target, status=lambda text: None, progress=lambda value: None):
-    request = Request(item['url'], headers={'User-Agent': 'SDOcraft/1.3'})
+    request = Request(item['url'], headers={'User-Agent': f'SDOcraft/{VERSION}'})
     size = 0
     sha = hashlib.sha256()
     try:
         with urlopen(request, timeout=30, context=CONTEXT) as response, target.open('wb') as output:
             if urlsplit(response.geturl()).scheme != 'https':
-                raise RuntimeError('Незахищене перенаправлення завантаження')
+                raise RuntimeError('Небезопасное перенаправление загрузки')
             while True:
                 chunk = response.read(256 * 1024)
                 if not chunk:
                     break
                 size += len(chunk)
                 if size > item['size']:
-                    raise RuntimeError('Розмір файла не відповідає опису збірки')
+                    raise RuntimeError('Размер файла не соответствует описанию сборки')
                 output.write(chunk)
                 sha.update(chunk)
                 progress(size * 100 / item['size'])
         if size != item['size'] or sha.hexdigest() != item['sha256']:
-            raise RuntimeError('Перевірка SHA-256 не пройдена: ' + item['path'])
+            raise RuntimeError('Проверка SHA-256 не пройдена: ' + item['path'])
     except Exception:
         target.unlink(missing_ok=True)
         raise
@@ -165,7 +170,7 @@ def duplicate_mods(root, manifest, obsolete):
                     continue
                 meta = tomllib.loads(jar.read('META-INF/mods.toml').decode('utf-8'))
             if ids & {mod['modId'] for mod in meta.get('mods', [])}:
-                raise RuntimeError('Знайдено іншу версію мода. Перенеси файл із mods перед запуском: ' + file.name)
+                raise RuntimeError('Найдена другая версия мода. Перенеси файл из mods перед запуском: ' + file.name)
         except (OSError, ValueError, KeyError, zipfile.BadZipFile):
             continue
 
@@ -190,7 +195,7 @@ def sync_files(root, manifest, status=lambda text: None, progress=lambda value: 
     with tempfile.TemporaryDirectory(prefix='.update-', dir=root) as staging:
         staging = Path(staging)
         for index, item in enumerate(changed):
-            status(f'Завантаження {index + 1}/{len(changed)}: {Path(item["path"]).name}')
+            status(f'Загрузка {index + 1}/{len(changed)}: {Path(item["path"]).name}')
             download(item, staging / str(index), status, progress)
         try:
             for index, item in enumerate(changed + obsolete):
@@ -201,7 +206,7 @@ def sync_files(root, manifest, status=lambda text: None, progress=lambda value: 
                 backup = None
                 if dst.exists():
                     if not dst.is_file():
-                        raise RuntimeError('Папка замість файла: ' + item['path'])
+                        raise RuntimeError('Папка вместо файла: ' + item['path'])
                     backup = backup_root / item['path']
                     backup.parent.mkdir(parents=True, exist_ok=True)
                     shutil.copy2(dst, backup)
