@@ -7,7 +7,7 @@ if errorlevel 1 goto fail
 :ready
 .venv\Scripts\python.exe -m pip install -r requirements.txt pyinstaller==6.16.0
 if errorlevel 1 goto fail
-.venv\Scripts\python.exe -m PyInstaller --noconfirm --clean --onefile --windowed --name SDOcraft --collect-all minecraft_launcher_lib launcher.py
+.venv\Scripts\python.exe -m PyInstaller --noconfirm --clean --onefile --windowed --name SDOcraft --icon branding/sdocraft.ico --add-data "branding;branding" --collect-all minecraft_launcher_lib launcher.py
 if errorlevel 1 goto fail
 echo Ready: dist\SDOcraft.exe
 pause

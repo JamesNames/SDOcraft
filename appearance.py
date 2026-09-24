@@ -3,7 +3,8 @@ from pathlib import Path
 import tkinter as tk
 from tkinter import ttk
 from PIL import Image, ImageTk, ImageOps
-from config import PHOTO
+from config import PHOTO, ICON, LOGO
+import sys
 
 BG = '#101310'
 PANEL = '#191e18'
@@ -78,6 +79,13 @@ def build(app):
     root = app.root
     root.configure(bg=BG)
     root.title('SDOcraft • Твоя команда. Твій світ.')
+    with Image.open(LOGO) as source:
+        app.brand_image = source.convert('RGBA')
+    app.window_icons = [ImageTk.PhotoImage(app.brand_image.resize((size, size), Image.Resampling.LANCZOS)) for size in (16, 32, 48, 64)]
+    if sys.platform == 'win32':
+        root.iconbitmap(default=str(ICON))
+    else:
+        root.iconphoto(True, *app.window_icons)
     root.geometry('1120x790')
     root.minsize(1040, 720)
     style = ttk.Style(root)
@@ -95,10 +103,9 @@ def build(app):
 
     brand = tk.Frame(rail, bg=PANEL)
     brand.pack(fill='x', pady=(0, 4))
-    mark = tk.Canvas(brand, width=34, height=36, bg=PANEL, highlightthickness=0)
+    app.sidebar_icon = ImageTk.PhotoImage(app.brand_image.resize((36, 36), Image.Resampling.LANCZOS))
+    mark = tk.Label(brand, image=app.sidebar_icon, bg=PANEL, bd=0)
     mark.pack(side='left', padx=(0, 10))
-    mark.create_polygon(3, 1, 31, 1, 31, 25, 17, 35, 3, 25, fill=ACCENT)
-    mark.create_text(17, 15, text='S', font=(FONT, 17, 'bold'), fill=BG)
     label(brand, 'SDOcraft', 21, bold=True).pack(side='left')
     label(rail, 'ТЕРИТОРІЯ СВОЇХ', 9, MUTED).pack(anchor='w', pady=(3, 21))
     nav = tk.Frame(rail, bg=FIELD, highlightthickness=1, highlightbackground=BORDER)

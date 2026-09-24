@@ -1,8 +1,9 @@
 """Owner-controlled launcher configuration. Not editable in the player UI."""
 import os
+import sys
 from pathlib import Path
 
-VERSION = '1.3.0'
+VERSION = '1.3.1'
 REPOSITORY = 'JamesNames/SDOcraft'
 MINECRAFT = '1.20.1'
 FORGE = '47.4.0'
@@ -11,3 +12,7 @@ DATA = Path(os.environ.get('APPDATA', str(Path.home()))) / 'SDOcraft'
 GAME = DATA / 'minecraft'
 MANIFEST_URL = f'https://github.com/{REPOSITORY}/releases/latest/download/modpack.json'
 PHOTO = DATA / 'assets' / 'squad.webp'
+
+BUNDLED = Path(getattr(sys, '_MEIPASS', Path(__file__).resolve().parent))
+ICON = BUNDLED / 'branding' / 'sdocraft.ico'
+LOGO = BUNDLED / 'branding' / 'sdocraft.png'

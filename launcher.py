@@ -258,6 +258,9 @@ class Launcher:
 
 
 if __name__ == '__main__':
+    if sys.platform == 'win32':
+        import ctypes
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID('SDOcraft.Launcher')
     window = tk.Tk()
     Launcher(window)
     window.mainloop()

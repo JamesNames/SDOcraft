@@ -21,7 +21,7 @@ jobs:
       - name: Test downloads and repair
         run: python -m unittest discover -s tests -v
       - name: Build one Windows executable
-        run: python -m PyInstaller --noconfirm --clean --onefile --windowed --name SDOcraft --collect-all minecraft_launcher_lib launcher.py
+        run: python -m PyInstaller --noconfirm --clean --onefile --windowed --name SDOcraft --icon branding/sdocraft.ico --add-data "branding;branding" --collect-all minecraft_launcher_lib launcher.py
       - name: Measure executable
         shell: pwsh
         run: |
