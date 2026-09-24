@@ -19,9 +19,10 @@ def pack_entries(jar):
     seen = set()
     total = 0
     for info in jar.infolist():
-        if not info.filename.startswith(PREFIX) or info.is_dir():
+        # ZipInfo normalizes backslashes on Windows; validate the original name.
+        if not info.orig_filename.startswith(PREFIX) or info.is_dir():
             continue
-        name = info.filename[len(PREFIX):]
+        name = info.orig_filename[len(PREFIX):]
         path = PurePosixPath(name)
         if (not name or path.is_absolute() or path.as_posix() != name
                 or '..' in path.parts or '\\' in name or ':' in name

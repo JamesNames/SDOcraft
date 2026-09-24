@@ -28,7 +28,10 @@ class GunpackTests(unittest.TestCase):
     def make_jar(self, extras=None):
         with zipfile.ZipFile(self.source, 'w') as jar:
             for path, payload in (self.contents | (extras or {})).items():
-                jar.writestr(gunpacks.PREFIX + path, payload)
+                info = zipfile.ZipInfo(gunpacks.PREFIX + path)
+                # Keep deliberately invalid test names verbatim on Windows too.
+                info.filename = gunpacks.PREFIX + path
+                jar.writestr(info, payload)
         raw = self.source.read_bytes()
         self.manifest = {'files': [{'path': 'mods/maxstuff.jar', 'size': len(raw),
                                   'sha256': hashlib.sha256(raw).hexdigest(), 'mod_ids': ['maxstuff']}]}
