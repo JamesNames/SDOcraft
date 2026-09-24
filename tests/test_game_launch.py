@@ -78,6 +78,17 @@ class GameLaunchTests(unittest.TestCase):
             time.sleep(0.02)
         self.assertEqual(result.read_text(encoding='utf-8'), 'survived')
         self.assertIn('child still running after parent exit', (self.game / 'game-output.log').read_text())
+        # Windows releases inherited log handles only when child shutdown ends.
+        # The result marker can become visible a few milliseconds before that.
+        deadline = time.monotonic() + 5
+        while True:
+            try:
+                (self.game / 'game-output.log').unlink()
+                break
+            except PermissionError:
+                if time.monotonic() >= deadline:
+                    raise
+                time.sleep(0.02)
 
 
 if __name__ == '__main__':
