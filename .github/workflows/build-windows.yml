@@ -1,0 +1,52 @@
+name: Build SDOcraft EXE
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+  release:
+    types: [published]
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt pyinstaller==6.16.0
+      - name: Test downloads and repair
+        run: python -m unittest discover -s tests -v
+      - name: Build one Windows executable
+        run: python -m PyInstaller --noconfirm --clean --onefile --windowed --name SDOcraft --collect-all minecraft_launcher_lib launcher.py
+      - name: Measure executable
+        shell: pwsh
+        run: |
+          $size = (Get-Item dist/SDOcraft.exe).Length
+          "SDOcraft.exe: $([math]::Round($size / 1MB, 2)) MiB" | Out-File -Append $env:GITHUB_STEP_SUMMARY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: SDOcraft-Windows
+          path: dist/SDOcraft.exe
+          if-no-files-found: error
+          retention-days: 30
+  attach-to-release:
+    if: github.event_name == 'release'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: SDOcraft-Windows
+          path: dist
+      - name: Attach executable to the published release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.event.release.tag_name }}
+          GH_REPO: ${{ github.repository }}
+        run: gh release upload "$RELEASE_TAG" dist/SDOcraft.exe --clobber
