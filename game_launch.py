@@ -5,6 +5,7 @@ from pathlib import Path
 import subprocess
 import sys
 import tempfile
+from server_list import ensure_server
 
 GAME_OPTIONS = {'guiScale': '2', 'lang': 'ru_ru'}
 
@@ -90,6 +91,7 @@ def launch_game(command, game_directory, startup_timeout=2.0):
     """Return after startup, keeping the child and its log alive after our exit."""
     game_directory = Path(game_directory)
     configure_game(game_directory)
+    ensure_server(game_directory)
     flags = (subprocess.CREATE_NO_WINDOW | subprocess.CREATE_NEW_PROCESS_GROUP) if os.name == 'nt' else 0
     with (game_directory / 'game-output.log').open('w', encoding='utf-8') as log:
         with external_environment() as environment:

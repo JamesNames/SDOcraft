@@ -3,7 +3,7 @@ import os
 import sys
 from pathlib import Path
 
-VERSION = '1.3.3'
+VERSION = '1.3.4'
 REPOSITORY = 'JamesNames/SDOcraft'
 MINECRAFT = '1.20.1'
 FORGE = '47.4.0'
