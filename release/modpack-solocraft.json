@@ -1,0 +1,24 @@
+{
+  "schema": 2,
+  "version": "v1.4.0",
+  "profile": "solocraft",
+  "minecraft": "1.20.1",
+  "forge": "47.4.16",
+  "pack": {
+    "project_id": "Rkfueyz7",
+    "version_id": "ZpHIuD0Z",
+    "version": "0.1.2",
+    "name": "SoloCraft",
+    "path": "SoloCraft.mrpack",
+    "url": "https://cdn.modrinth.com/data/Rkfueyz7/versions/ZpHIuD0Z/SoloCraft%200.1.2.mrpack",
+    "size": 481639,
+    "sha256": "9459c54d9b229cca3cd270cadb0941601decf1b645765d4bdf9779600c855292"
+  },
+  "photo": {
+    "path": "assets/squad.webp",
+    "size": 542840,
+    "sha256": "f68b4a0a44880214ed6eed22f9aa13bf69bb0106042bd16ca8f0dd099dc71a93",
+    "url": "https://github.com/JamesNames/SDOcraft/releases/download/v1.3.0/squad.webp",
+    "mod_ids": []
+  }
+}

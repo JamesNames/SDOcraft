@@ -8,6 +8,7 @@ import unittest
 from unittest.mock import patch
 from urllib.error import URLError
 import updater
+from config import FORGE
 
 
 def entry(path, payload):
@@ -17,7 +18,7 @@ def entry(path, payload):
 
 
 def manifest(payload=b'mod-v1'):
-    return {'schema': 1, 'minecraft': '1.20.1', 'forge': '47.4.0',
+    return {'schema': 1, 'minecraft': '1.20.1', 'forge': FORGE,
             'files': [entry('mods/example.jar', payload), entry('assets/squad.webp', b'photo')]}
 
 

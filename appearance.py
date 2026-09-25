@@ -154,7 +154,7 @@ def build(app):
     title = tk.Frame(main, bg=BG)
     title.pack(fill='x', pady=(8, 3))
     label(title, 'Твоя команда. Твой мир.', 25, bold=True).pack(anchor='w')
-    label(main, 'Собирай отряд и присоединяйся к SDOcraft.', 11, MUTED).pack(anchor='w', pady=(0, 18))
+    label(main, 'SoloCraft: подземелья, магия и новое приключение.', 11, MUTED).pack(anchor='w', pady=(0, 18))
 
     hero = tk.Frame(main, bg=PANEL, highlightthickness=1, highlightbackground=BORDER)
     hero.pack(fill='both', expand=True)
@@ -163,7 +163,7 @@ def build(app):
     caption = tk.Frame(hero, bg=PANEL)
     caption.pack(fill='x', padx=14, pady=10)
     label(caption, 'SDO  /  НАШ ОТРЯД', 9, ACCENT, True).pack(side='left')
-    label(caption, 'СБОРКА С АВТООБНОВЛЕНИЕМ', 9, MUTED).pack(side='right')
+    label(caption, 'СБОРКА SOLOCRAFT', 9, MUTED).pack(side='right')
 
     tools = tk.Frame(main, bg=BG)
     tools.pack(fill='x', pady=(14, 12))

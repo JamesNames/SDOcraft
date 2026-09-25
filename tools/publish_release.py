@@ -6,19 +6,18 @@ import sys
 import tempfile
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from config import VERSION
-from updater import validate_manifest, download
-from gunpacks import sync_gunpacks, check_gunpacks
+from modrinth_pack import validate_manifest, cached_archive, read_pack
 
 
 def main():
-    path = Path('release/modpack.json')
+    path = Path('release/modpack-solocraft.json')
     if not path.is_file():
         print('No release prepared; keeping the Actions artifact only.')
         return
     manifest = validate_manifest(json.loads(path.read_text(encoding='utf-8')))
     tag = 'v' + VERSION
     if manifest.get('version') != tag:
-        raise RuntimeError('Version in config.py must match release/modpack.json')
+        raise RuntimeError('Version in config.py must match release/modpack-solocraft.json')
     # Published versions are never overwritten by a later push.
     result = subprocess.run(['gh', 'api', f'repos/{{owner}}/{{repo}}/releases/tags/{tag}'],
                             capture_output=True, text=True)
@@ -29,21 +28,16 @@ def main():
         return
     if 'HTTP 404' not in result.stderr:
         raise RuntimeError('Cannot check release: ' + result.stderr)
-    # Verify the new external mod against the hash of the supplied file.
+    # Validate the original author archive and exact client layout before release.
     with tempfile.TemporaryDirectory() as temporary:
         root = Path(temporary)
-        for item in manifest['files']:
-            if item.get('mod_ids') == ['maxstuff']:
-                target = root / 'minecraft' / item['path']
-                target.parent.mkdir(parents=True, exist_ok=True)
-                download(item, target)
-        sync_gunpacks(root, manifest)
-        if check_gunpacks(root, manifest):
-            raise RuntimeError('Gun pack validation failed')
+        files = read_pack(cached_archive(root, manifest), manifest)
+        print('Verified SoloCraft client files:', len(files))
     commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()
     subprocess.run(['gh', 'release', 'create', tag, '--draft', '--target', commit,
                     '--title', 'SDOcraft ' + tag, '--notes-file', 'release/notes.md'], check=True)
-    subprocess.run(['gh', 'release', 'upload', tag, 'dist/SDOcraft.exe', str(path)], check=True)
+    # Legacy clients keep their old pack; they must not receive SoloCraft files.
+    subprocess.run(['gh', 'release', 'upload', tag, 'dist/SDOcraft.exe', str(path), 'release/modpack.json'], check=True)
     subprocess.run(['gh', 'release', 'edit', tag, '--draft=false', '--latest'], check=True)
     print('Published ' + tag)
 

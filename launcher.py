@@ -13,12 +13,11 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import uuid
 from config import DATA, GAME, SERVER, FORGE, MINECRAFT, PHOTO, VERSION
-from updater import fetch_manifest, sync_files, check_files
-from gunpacks import check_gunpacks, sync_gunpacks
+from modrinth_pack import fetch_manifest, sync_files, check_files
 from game_launch import launch_game
 
 ROOT = DATA
-DEFAULTS = {'nickname': 'Player', 'ram': '4', 'server': SERVER, 'forge': FORGE}
+DEFAULTS = {'nickname': 'Player', 'ram': '6', 'server': SERVER, 'forge': FORGE}
 
 BG, CARD, TEXT, MUTED, RED = '#101116', '#1b1d25', '#f5f5f7', '#989daa', '#ef4444'
 
@@ -52,8 +51,8 @@ def validate(settings):
         raise ValueError('Оперативная память: от 2 до 32 ГБ.')
     if not re.fullmatch(r'47\.\d+\.\d+', settings['forge']):
         raise ValueError('Forge для 1.20.1 имеет формат 47.x.x.')
-    if tuple(map(int, settings['forge'].split('.'))) < (47, 4, 0):
-        raise ValueError('DragonRise из этой сборки требует Forge 47.4.0 или новее.')
+    if settings['forge'] != FORGE:
+        raise ValueError('Версия Forge должна соответствовать сборке SoloCraft.')
     server = settings['server']
     if server and (re.search(r'\s|[/\\]', server) or len(server) > 255):
         raise ValueError('Введи адрес сервера без https:// и пробелов.')
@@ -164,13 +163,15 @@ class Launcher:
         def run():
             try:
                 manifest = fetch_manifest(ROOT, lambda text: self.events.put(('status', text)))
-                missing = [item['path'] for item in check_files(ROOT, manifest)]
-                missing.extend(check_gunpacks(ROOT, manifest))
+                missing = check_files(ROOT, manifest)
                 if missing:
-                    self.events.put(('info', 'Нужно установить или восстановить:\n\n' + '\n'.join(missing) +
+                    details = '\n'.join(missing[:15])
+                    if len(missing) > 15:
+                        details += f'\n…и ещё {len(missing) - 15} файлов.'
+                    self.events.put(('info', 'Нужно установить или восстановить:\n\n' + details +
                                      '\n\nНажми «Играть» или «Восстановить»: файлы загрузятся из интернета.'))
                 else:
-                    self.events.put(('info', 'Файлы сборки и ресурсы оружейных пакетов проверены.'))
+                    self.events.put(('info', 'Моды и файлы SoloCraft проверены. Настройки игрока сохраняются.'))
             except Exception as exc:
                 self.events.put(('error', str(exc)))
             finally:
@@ -200,11 +201,10 @@ class Launcher:
                         'setMax': lambda v: self.events.put(('max', max(v, 1)))}
             manifest = fetch_manifest(ROOT, callback['setStatus'])
             callback['setMax'](100)
-            count = sync_files(ROOT, manifest, callback['setStatus'], callback['setProgress'])
-            sync_gunpacks(ROOT, manifest, callback['setStatus'])
+            count = sync_files(ROOT, manifest, callback['setStatus'], callback['setProgress'], repair=repair)
             self.events.put(('photo', None))
-            callback['setStatus'](f'Сборка готова. Загружено файлов: {count}.')
-            forge = '1.20.1-' + settings['forge']
+            callback['setStatus'](f'SoloCraft готова. Установлено файлов: {count}.')
+            forge = MINECRAFT + '-' + settings['forge']
             version = mcl.forge.forge_to_installed_version(forge)
             marker = GAME / ('sdocraft-' + forge + '.ready')
             java = mcl.runtime.get_executable_path('java-runtime-gamma', GAME)
