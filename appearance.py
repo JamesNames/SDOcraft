@@ -134,6 +134,9 @@ def build(app):
     note = label(rail, 'Скопируй /login перед запуском.\nВ игре: чат → Ctrl+V → Enter.\nПароль не сохраняется.', 9, MUTED)
     note.configure(justify='left', wraplength=205)
     note.pack(anchor='w', pady=(12, 0))
+    memory = button(rail, 'ОЗУ для игры', app.memory_settings, small=True)
+    memory.pack(fill='x', pady=(12, 0))
+    app.widgets.append(memory)
     tk.Frame(rail, bg=BORDER, height=1).pack(fill='x', pady=23)
     label(rail, 'ТВОЙ ОТРЯД ЖДЁТ', 9, ACCENT, True).pack(anchor='w')
     desc = label(rail, 'Собери команду.\nЗайми свою позицию.\nСоздай свою историю.', 10, MUTED)
@@ -154,7 +157,7 @@ def build(app):
     title = tk.Frame(main, bg=BG)
     title.pack(fill='x', pady=(8, 3))
     label(title, 'Твоя команда. Твой мир.', 25, bold=True).pack(anchor='w')
-    label(main, 'SoloCraft: подземелья, магия и новое приключение.', 11, MUTED).pack(anchor='w', pady=(0, 18))
+    label(main, 'ChaosZProject: города, оружие и зомби-апокалипсис.', 11, MUTED).pack(anchor='w', pady=(0, 18))
 
     hero = tk.Frame(main, bg=PANEL, highlightthickness=1, highlightbackground=BORDER)
     hero.pack(fill='both', expand=True)
@@ -163,7 +166,7 @@ def build(app):
     caption = tk.Frame(hero, bg=PANEL)
     caption.pack(fill='x', padx=14, pady=10)
     label(caption, 'SDO  /  НАШ ОТРЯД', 9, ACCENT, True).pack(side='left')
-    label(caption, 'СБОРКА SOLOCRAFT', 9, MUTED).pack(side='right')
+    label(caption, 'СБОРКА CHAOSZPROJECT', 9, MUTED).pack(side='right')
 
     tools = tk.Frame(main, bg=BG)
     tools.pack(fill='x', pady=(14, 12))

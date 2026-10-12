@@ -13,11 +13,11 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 import uuid
 from config import DATA, GAME, SERVER, FORGE, MINECRAFT, PHOTO, VERSION
-from modrinth_pack import fetch_manifest, sync_files, check_files
-from game_launch import launch_game
+from archive_pack import fetch_manifest, sync_files, check_files
+from game_launch import launch_game, fix_forge_command
 
 ROOT = DATA
-DEFAULTS = {'nickname': 'Player', 'ram': '6', 'server': SERVER, 'forge': FORGE}
+DEFAULTS = {'nickname': 'Player', 'ram': '8', 'server': SERVER, 'forge': FORGE}
 
 BG, CARD, TEXT, MUTED, RED = '#101116', '#1b1d25', '#f5f5f7', '#989daa', '#ef4444'
 
@@ -52,7 +52,7 @@ def validate(settings):
     if not re.fullmatch(r'47\.\d+\.\d+', settings['forge']):
         raise ValueError('Forge для 1.20.1 имеет формат 47.x.x.')
     if settings['forge'] != FORGE:
-        raise ValueError('Версия Forge должна соответствовать сборке SoloCraft.')
+        raise ValueError('Версия Forge должна соответствовать сборке ChaosZProject.')
     server = settings['server']
     if server and (re.search(r'\s|[/\\]', server) or len(server) > 255):
         raise ValueError('Введи адрес сервера без https:// и пробелов.')
@@ -156,6 +156,39 @@ class Launcher:
         except OSError as exc:
             messagebox.showerror('Не удалось добавить мод', str(exc))
 
+    def memory_settings(self):
+        if self.busy:
+            return
+        dialog = tk.Toplevel(self.root)
+        dialog.title('ОЗУ для игры')
+        dialog.resizable(False, False)
+        dialog.transient(self.root)
+        dialog.grab_set()
+        frame = ttk.Frame(dialog, padding=20)
+        frame.pack(fill='both', expand=True)
+        ttk.Label(frame, text='Память для Minecraft, ГБ').pack(anchor='w')
+        memory = tk.StringVar(value=self.vars['ram'].get())
+        choices = ttk.Combobox(frame, textvariable=memory, values=('4', '6', '8', '10', '12', '16'),
+                               state='readonly', width=12)
+        choices.pack(anchor='w', pady=12)
+        ttk.Label(frame, text='Для этой сборки рекомендуется 8 ГБ. Оставь память для Windows.').pack(anchor='w')
+
+        def apply():
+            try:
+                amount = int(memory.get())
+                if not 2 <= amount <= 32:
+                    raise ValueError('Выбери от 2 до 32 ГБ.')
+                settings = {key: value.get() for key, value in self.vars.items()}
+                settings['ram'] = str(amount)
+                save_settings(settings)
+                self.vars['ram'].set(str(amount))
+                self.status.set(f'Для Minecraft выделено {amount} ГБ.')
+                dialog.destroy()
+            except (ValueError, OSError) as exc:
+                messagebox.showerror('ОЗУ для игры', str(exc), parent=dialog)
+
+        ttk.Button(frame, text='Сохранить', command=apply).pack(anchor='e', pady=(16, 0))
+
     def check_mods(self):
         self.busy = True
         for widget in self.widgets:
@@ -171,7 +204,7 @@ class Launcher:
                     self.events.put(('info', 'Нужно установить или восстановить:\n\n' + details +
                                      '\n\nНажми «Играть» или «Восстановить»: файлы загрузятся из интернета.'))
                 else:
-                    self.events.put(('info', 'Моды и файлы SoloCraft проверены. Настройки игрока сохраняются.'))
+                    self.events.put(('info', 'Моды и файлы ChaosZProject проверены. Настройки игрока сохраняются.'))
             except Exception as exc:
                 self.events.put(('error', str(exc)))
             finally:
@@ -203,7 +236,7 @@ class Launcher:
             callback['setMax'](100)
             count = sync_files(ROOT, manifest, callback['setStatus'], callback['setProgress'], repair=repair)
             self.events.put(('photo', None))
-            callback['setStatus'](f'SoloCraft готова. Установлено файлов: {count}.')
+            callback['setStatus'](f'ChaosZProject готова. Установлено файлов: {count}.')
             forge = MINECRAFT + '-' + settings['forge']
             version = mcl.forge.forge_to_installed_version(forge)
             marker = GAME / ('sdocraft-' + forge + '.ready')
@@ -227,7 +260,7 @@ class Launcher:
                        'gameDirectory': str(GAME), 'jvmArguments': ['-Xms1G', '-Xmx' + settings['ram'] + 'G']}
             if settings['server']:
                 options['quickPlayMultiplayer'] = settings['server']
-            command = mcl.command.get_minecraft_command(version, GAME, options)
+            command = fix_forge_command(mcl.command.get_minecraft_command(version, GAME, options))
             callback['setStatus']('Запуск Minecraft… Лаунчер закроется автоматически.')
             self.game_process = launch_game(command, GAME)
             self.events.put(('game_started', None))

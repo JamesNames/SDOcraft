@@ -5,10 +5,18 @@ import tempfile
 import time
 import unittest
 from unittest.mock import patch
-from game_launch import configure_game, launch_game
+from game_launch import configure_game, launch_game, fix_forge_command
 
 
 class GameLaunchTests(unittest.TestCase):
+    def test_vanilla_jar_is_excluded_from_forge_module_scan(self):
+        command = ['java', '-DignoreList=bootstraplauncher,client-extra', '-cp', '1.20.1.jar']
+        fixed = fix_forge_command(command)
+        self.assertEqual(fixed[1], '-DignoreList=bootstraplauncher,client-extra,1.20.1.jar')
+        self.assertEqual(fix_forge_command(fixed), fixed)
+        self.assertNotEqual(command[1], fixed[1])
+        self.assertEqual(fixed[2:], command[2:])
+
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.game = Path(self.tmp.name)

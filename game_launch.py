@@ -10,6 +10,20 @@ from server_list import ensure_server
 GAME_OPTIONS = {'guiScale': '2', 'lang': 'ru_ru'}
 
 
+def fix_forge_command(command):
+    """Keep the vanilla client jar out of Forge's automatic module scan."""
+    from config import MINECRAFT
+    command = list(command)
+    for i, value in enumerate(command):
+        if value.startswith('-DignoreList='):
+            items = value.partition('=')[2].split(',')
+            name = MINECRAFT + '.jar'
+            if name not in items:
+                items.append(name)
+            command[i] = '-DignoreList=' + ','.join(items)
+    return command
+
+
 def configure_game(game_directory):
     """Change only the requested options; preserve all other game preferences."""
     game_directory = Path(game_directory)

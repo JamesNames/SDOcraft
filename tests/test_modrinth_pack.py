@@ -9,7 +9,7 @@ from unittest.mock import patch
 from urllib.error import URLError
 import zipfile
 
-from config import FORGE, MINECRAFT, PROFILE
+from modrinth_pack import FORGE, MINECRAFT, PROFILE
 import modrinth_pack as pack
 
 

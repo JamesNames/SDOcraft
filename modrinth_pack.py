@@ -13,7 +13,11 @@ from urllib.request import Request, urlopen
 import uuid
 import zipfile
 
-from config import FORGE, MINECRAFT, PROFILE, REPOSITORY, SOLOCRAFT_MANIFEST_URL, VERSION
+from config import MINECRAFT, REPOSITORY, SOLOCRAFT_MANIFEST_URL, VERSION
+
+# Legacy SoloCraft support remains pinned independently from the current pack.
+FORGE = "47.4.16"
+PROFILE = Path("profiles/solocraft")
 from updater import CONTEXT, atomic_json, download, matches
 
 MAX_FILE = 512 * 1024**2

@@ -190,3 +190,7 @@ dist/
 *.jar
 release-assets/
 bundled_mods/
+
+# Redistributable UnRAR used by the Windows installer
+!tools/unrar/UnRAR.exe
+verification/

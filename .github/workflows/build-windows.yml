@@ -10,7 +10,7 @@ permissions:
 jobs:
   build:
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -20,8 +20,17 @@ jobs:
         run: python -m pip install -r requirements.txt pyinstaller==6.16.0
       - name: Test downloads and repair
         run: python -m unittest discover -s tests -v
+      - name: Verify original pack, Windows extraction, UI and Forge installation
+        run: python tools/verify_windows.py
+      - name: Upload verification report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: SDOcraft-verification
+          path: verification/
+          if-no-files-found: ignore
       - name: Build one Windows executable
-        run: python -m PyInstaller --noconfirm --clean --onefile --windowed --name SDOcraft --icon branding/sdocraft.ico --add-data "branding;branding" --collect-all minecraft_launcher_lib launcher.py
+        run: python -m PyInstaller --noconfirm --clean --onefile --windowed --name SDOcraft --icon branding/sdocraft.ico --add-data "branding;branding" --add-data "release/modpack-chaosz.json;release" --add-data "tools/unrar;tools/unrar" --collect-all minecraft_launcher_lib launcher.py
       - name: Measure executable
         shell: pwsh
         run: |
@@ -53,7 +62,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
         run: |
-          python -m pip install certifi
+          python -m pip install certifi rarfile==4.5
           python tools/publish_release.py
   attach-to-release:
     if: github.event_name == 'release'
