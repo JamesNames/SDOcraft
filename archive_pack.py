@@ -4,7 +4,7 @@ from http.cookiejar import CookieJar
 import hashlib
 import json
 import os
-from pathlib import Path, PurePosixPath
+from pathlib import Path, PurePosixPath, PureWindowsPath
 import re
 import shutil
 import subprocess
@@ -243,7 +243,10 @@ def extract_selected(archive, entries, staging, status=lambda text: None):
     if os.name == 'nt':
         # All archive paths and links were checked before invoking UnRAR.
         listing = staging / 'files.lst'
-        listing.write_text(''.join('"' + PACK_ROOT + '/' + e['path'] + '"\n' for e in entries), encoding='utf-16')
+        # UnRAR compares include-list masks with native Windows archive names;
+        # unlike command-line exclusion masks, it does not normalize '/'.
+        listing.write_text(''.join('"' + str(PureWindowsPath(PACK_ROOT, e['path'])) + '"\n'
+                                   for e in entries), encoding='utf-16')
         result = subprocess.run([str(BUNDLED / 'tools/unrar/UnRAR.exe'), 'x', '-idq', '-y', '-o+', '-p-', '-scul',
                                  str(archive), '@' + str(listing), str(staging) + os.sep],
                                 stdin=subprocess.DEVNULL, capture_output=True,
