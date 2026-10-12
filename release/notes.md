@@ -1,4 +1,4 @@
-# SDOcraft 2.0.0 — ChaosZProject
+# SDOcraft 2.0.1 — ChaosZProject
 
 Лаунчер устанавливает **ChaosZProject V2.1.5 Community Edition** из архива владельца на Google Drive: Minecraft 1.20.1, Forge 47.4.6, 285 модов и ресурсы сборки.
 
@@ -16,3 +16,5 @@
 Источник архива: https://drive.google.com/file/d/16SJGytzi1q08fMmYtbwkAET03Oq9Mewj/view
 
 Прежние манифесты сохранены для старых EXE. Этот выпуск использует `modpack-chaosz.json`.
+
+Исправлен запуск Java из Windows-папок с кириллицей через короткий путь. Java и результат установки Forge проверяются до запуска игры.

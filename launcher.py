@@ -15,6 +15,7 @@ import uuid
 from config import DATA, GAME, SERVER, FORGE, MINECRAFT, PHOTO, VERSION
 from archive_pack import fetch_manifest, sync_files, check_files
 from game_launch import launch_game, fix_forge_command
+from java_setup import java_game_directory, verify_java, verify_forge_files, verify_command_files
 
 ROOT = DATA
 DEFAULTS = {'nickname': 'Player', 'ram': '8', 'server': SERVER, 'forge': FORGE}
@@ -237,32 +238,42 @@ class Launcher:
             count = sync_files(ROOT, manifest, callback['setStatus'], callback['setProgress'], repair=repair)
             self.events.put(('photo', None))
             callback['setStatus'](f'ChaosZProject готова. Установлено файлов: {count}.')
+            game = java_game_directory(GAME)
             forge = MINECRAFT + '-' + settings['forge']
             version = mcl.forge.forge_to_installed_version(forge)
-            marker = GAME / ('sdocraft-' + forge + '.ready')
-            java = mcl.runtime.get_executable_path('java-runtime-gamma', GAME)
-            if not java or not Path(java).is_file():
+            marker = game / ('sdocraft-' + forge + '.ready')
+            java = mcl.runtime.get_executable_path('java-runtime-gamma', game)
+            if repair or not java or not Path(java).is_file():
                 callback['setStatus']('Установка Java 17…')
-                mcl.runtime.install_jvm_runtime('java-runtime-gamma', GAME, callback=callback)
-                java = mcl.runtime.get_executable_path('java-runtime-gamma', GAME)
+                mcl.runtime.install_jvm_runtime('java-runtime-gamma', game, callback=callback)
+                java = mcl.runtime.get_executable_path('java-runtime-gamma', game)
             if not java:
                 raise RuntimeError('Не удалось установить Java 17. Проверь интернет и повтори.')
-            if repair or not marker.exists() or not (GAME / 'versions' / version / (version + '.json')).is_file():
+            verify_java(java)
+            try:
+                verify_forge_files(game, forge)
+            except RuntimeError:
+                marker.unlink(missing_ok=True)
+            if repair or not marker.exists() or not (game / 'versions' / version / (version + '.json')).is_file():
                 marker.unlink(missing_ok=True)
                 callback['setStatus']('Установка Minecraft и Forge. Это может занять несколько минут…')
-                mcl.forge.install_forge_version(forge, GAME, callback=callback, java=java)
+                from game_launch import external_environment
+                with external_environment():
+                    mcl.forge.install_forge_version(forge, game, callback=callback, java=java)
+                verify_forge_files(game, forge)
                 marker.write_text('complete', encoding='utf-8')
             if repair:
                 callback['setStatus']('Установка завершена. Можно играть!')
                 return
             options = {'username': settings['nickname'], 'uuid': offline_uuid(settings['nickname']),
                        'token': '0', 'executablePath': java, 'launcherName': 'SDOcraft', 'launcherVersion': VERSION,
-                       'gameDirectory': str(GAME), 'jvmArguments': ['-Xms1G', '-Xmx' + settings['ram'] + 'G']}
+                       'gameDirectory': str(game), 'jvmArguments': ['-Xms1G', '-Xmx' + settings['ram'] + 'G']}
             if settings['server']:
                 options['quickPlayMultiplayer'] = settings['server']
-            command = fix_forge_command(mcl.command.get_minecraft_command(version, GAME, options))
+            command = fix_forge_command(mcl.command.get_minecraft_command(version, game, options))
+            verify_command_files(command)
             callback['setStatus']('Запуск Minecraft… Лаунчер закроется автоматически.')
-            self.game_process = launch_game(command, GAME)
+            self.game_process = launch_game(command, game)
             self.events.put(('game_started', None))
         except Exception as exc:
             self.events.put(('error', str(exc)))

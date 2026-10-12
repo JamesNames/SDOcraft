@@ -3,12 +3,12 @@ import os
 import sys
 from pathlib import Path
 
-VERSION = '2.0.0'
+VERSION = '2.0.1'
 REPOSITORY = 'JamesNames/SDOcraft'
 MINECRAFT = '1.20.1'
 FORGE = '47.4.6'
 SERVER = '93.119.104.217:25587'
-DATA = Path(os.environ.get('APPDATA', str(Path.home()))) / 'SDOcraft'
+DATA = Path(os.environ.get('SDOCRAFT_DATA_DIR') or (Path(os.environ.get('APPDATA', str(Path.home()))) / 'SDOcraft'))
 PROFILE = Path('profiles') / 'chaosz'
 GAME = DATA / PROFILE / 'minecraft'
 MANIFEST_URL = f'https://github.com/{REPOSITORY}/releases/latest/download/modpack.json'

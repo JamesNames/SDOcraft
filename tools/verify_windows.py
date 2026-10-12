@@ -11,6 +11,7 @@ import archive_pack as pack
 from config import FORGE, MINECRAFT, PROFILE, SERVER
 from game_launch import configure_game, fix_forge_command
 from server_list import ensure_server
+from java_setup import java_game_directory, verify_java, verify_forge_files, verify_command_files
 
 
 def main():
@@ -69,13 +70,16 @@ def main():
     print('PASS: visible Windows UI controls at both supported sizes', flush=True)
 
     import minecraft_launcher_lib as mcl
+    game = java_game_directory(game)
     callback = {'setStatus': status}
     print('Installing the Minecraft Java runtime and Forge...', flush=True)
     mcl.runtime.install_jvm_runtime('java-runtime-gamma', game, callback=callback)
     java = mcl.runtime.get_executable_path('java-runtime-gamma', game)
     assert java and Path(java).is_file()
+    verify_java(java)
     forge = MINECRAFT + '-' + FORGE
     mcl.forge.install_forge_version(forge, game, callback=callback, java=java)
+    verify_forge_files(game, forge)
     version = mcl.forge.forge_to_installed_version(forge)
     command = fix_forge_command(mcl.command.get_minecraft_command(version, game, {
         'username': 'SDOcraftTest', 'uuid': launcher.offline_uuid('SDOcraftTest'),
@@ -85,6 +89,7 @@ def main():
     assert '-Xmx8G' in command
     assert any(c.startswith('-DignoreList=') and '1.20.1.jar' in c for c in command)
     assert SERVER in command
+    verify_command_files(command)
     print('PASS: Java 17 and Forge installed; launch command includes RAM, server and module fix', flush=True)
     (report / 'result.txt').write_text(
         'PASS: original Google Drive archive, SHA-256, Windows UnRAR, all 8425 files, 285 mods, '
