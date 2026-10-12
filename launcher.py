@@ -15,7 +15,7 @@ import uuid
 from config import DATA, GAME, SERVER, FORGE, MINECRAFT, PHOTO, VERSION
 from archive_pack import fetch_manifest, sync_files, check_files
 from game_launch import launch_game, fix_forge_command
-from java_setup import java_game_directory, verify_java, verify_forge_files, verify_command_files
+from java_setup import java_game_directory, java_runtime_directory, verify_java, verify_forge_files, verify_command_files
 
 ROOT = DATA
 DEFAULTS = {'nickname': 'Player', 'ram': '8', 'server': SERVER, 'forge': FORGE}
@@ -239,14 +239,15 @@ class Launcher:
             self.events.put(('photo', None))
             callback['setStatus'](f'ChaosZProject готова. Установлено файлов: {count}.')
             game = java_game_directory(GAME)
+            runtime = java_runtime_directory(ROOT, game)
             forge = MINECRAFT + '-' + settings['forge']
             version = mcl.forge.forge_to_installed_version(forge)
             marker = game / ('sdocraft-' + forge + '.ready')
-            java = mcl.runtime.get_executable_path('java-runtime-gamma', game)
+            java = mcl.runtime.get_executable_path('java-runtime-gamma', runtime)
             if repair or not java or not Path(java).is_file():
                 callback['setStatus']('Установка Java 17…')
-                mcl.runtime.install_jvm_runtime('java-runtime-gamma', game, callback=callback)
-                java = mcl.runtime.get_executable_path('java-runtime-gamma', game)
+                mcl.runtime.install_jvm_runtime('java-runtime-gamma', runtime, callback=callback)
+                java = mcl.runtime.get_executable_path('java-runtime-gamma', runtime)
             if not java:
                 raise RuntimeError('Не удалось установить Java 17. Проверь интернет и повтори.')
             verify_java(java)

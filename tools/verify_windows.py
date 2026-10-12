@@ -11,7 +11,7 @@ import archive_pack as pack
 from config import FORGE, MINECRAFT, PROFILE, SERVER
 from game_launch import configure_game, fix_forge_command
 from server_list import ensure_server
-from java_setup import java_game_directory, verify_java, verify_forge_files, verify_command_files
+from java_setup import java_game_directory, java_runtime_directory, verify_java, verify_forge_files, verify_command_files
 
 
 def main():
@@ -52,6 +52,8 @@ def main():
             patch.object(launcher.Launcher, 'bootstrap'):
         window = tk.Tk()
         app = launcher.Launcher(window)
+        window.attributes('-topmost', True)
+        window.lift()
         for size in ('1040x720', '1120x790'):
             window.geometry(size)
             window.update()
@@ -71,12 +73,15 @@ def main():
 
     import minecraft_launcher_lib as mcl
     game = java_game_directory(game)
+    runtime = java_runtime_directory(root, game)
+    assert str(runtime).isascii(), 'Java must have an ASCII executable path'
     callback = {'setStatus': status}
     print('Installing the Minecraft Java runtime and Forge...', flush=True)
-    mcl.runtime.install_jvm_runtime('java-runtime-gamma', game, callback=callback)
-    java = mcl.runtime.get_executable_path('java-runtime-gamma', game)
+    mcl.runtime.install_jvm_runtime('java-runtime-gamma', runtime, callback=callback)
+    java = mcl.runtime.get_executable_path('java-runtime-gamma', runtime)
     assert java and Path(java).is_file()
     verify_java(java)
+    print('PASS: Java 17 executes successfully for a Unicode game directory', flush=True)
     forge = MINECRAFT + '-' + FORGE
     mcl.forge.install_forge_version(forge, game, callback=callback, java=java)
     verify_forge_files(game, forge)
