@@ -1,0 +1,26 @@
+name: Build RoN-TacZ Riflemen
+on:
+  push:
+    branches: [build/rontacz-riflemen]
+  workflow_dispatch:
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '7.6.5'
+      - name: Build Forge addon
+        run: gradle build --no-daemon --stacktrace
+      - name: Upload release jar
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rontacz-riflemen-jar
+          path: build/libs/rontacz-riflemen-0.1.0.jar

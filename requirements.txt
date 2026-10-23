@@ -1,3 +1,0 @@
-minecraft-launcher-lib==7.1
-Pillow==11.3.0
-rarfile==4.5

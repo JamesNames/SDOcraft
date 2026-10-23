@@ -1,0 +1,32 @@
+modLoader="javafml"
+loaderVersion="[47,)"
+license="GPL-3.0-only"
+[[mods]]
+modId="rontacz"
+version="${file.jarVersion}"
+displayName="Reign of Nether x TaCZ - Riflemen"
+description='''Adds an AK-47-equipped RTS Rifleman unit to Reign of Nether Barracks.'''
+[[dependencies.rontacz]]
+modId="forge"
+mandatory=true
+versionRange="[47,)"
+ordering="NONE"
+side="BOTH"
+[[dependencies.rontacz]]
+modId="minecraft"
+mandatory=true
+versionRange="[1.20.1,1.20.2)"
+ordering="NONE"
+side="BOTH"
+[[dependencies.rontacz]]
+modId="reignofnether"
+mandatory=true
+versionRange="[1.5.0b,)"
+ordering="AFTER"
+side="BOTH"
+[[dependencies.rontacz]]
+modId="tacz"
+mandatory=true
+versionRange="[1.1.8,)"
+ordering="AFTER"
+side="BOTH"

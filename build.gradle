@@ -1,0 +1,58 @@
+buildscript {
+  repositories {
+    maven { url = 'https://maven.minecraftforge.net' }
+    maven { url = 'https://repo.spongepowered.org/repository/maven-public/' }
+    maven { url = 'https://maven.parchmentmc.org' }
+    mavenCentral()
+  }
+  dependencies {
+    classpath 'net.minecraftforge.gradle:ForgeGradle:5.1.+'
+    classpath 'org.spongepowered:mixingradle:0.7.+'
+    classpath 'org.parchmentmc:librarian:1.+'
+  }
+}
+apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'org.spongepowered.mixin'
+apply plugin: 'org.parchmentmc.librarian.forgegradle'
+apply plugin: 'eclipse'
+version = '0.1.0'
+group = 'ua.sdocraft.rontacz'
+archivesBaseName = 'rontacz-riflemen'
+java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+minecraft {
+  mappings channel: 'parchment', version: '2023.09.03-1.20.1'
+  runs {
+    client {
+      workingDirectory project.file('run')
+      arg '-mixin.config=rontacz.mixins.json'
+      mods { rontacz { source sourceSets.main } }
+    }
+    server {
+      workingDirectory project.file('run')
+      arg '-mixin.config=rontacz.mixins.json'
+      mods { rontacz { source sourceSets.main } }
+    }
+  }
+}
+repositories {
+  exclusiveContent {
+    forRepository { maven { name = 'Modrinth'; url = 'https://api.modrinth.com/maven' } }
+    forRepositories(fg.repository)
+    filter { includeGroup 'maven.modrinth' }
+  }
+  mavenCentral()
+}
+dependencies {
+  minecraft 'net.minecraftforge:forge:1.20.1-47.4.0'
+  implementation fg.deobf('maven.modrinth:FdbVHPk2:BpeAy6l2')
+  implementation fg.deobf('maven.modrinth:SzzJttH8:AzCBJlex')
+  annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+}
+mixin { add sourceSets.main, 'rontacz.refmap.json' }
+jar {
+  manifest.attributes('MixinConfigs':'rontacz.mixins.json',
+                      'Specification-Title':'RoN x TaCZ Riflemen',
+                      'Implementation-Version':project.version)
+  finalizedBy('reobfJar')
+}
+tasks.withType(JavaCompile).configureEach { options.encoding = 'UTF-8' }
