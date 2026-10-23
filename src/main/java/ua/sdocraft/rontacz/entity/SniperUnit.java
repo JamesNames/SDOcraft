@@ -1,5 +1,6 @@
 package ua.sdocraft.rontacz.entity;
 
+import com.tacz.guns.api.item.gun.FireMode;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.monster.Pillager;
 import net.minecraft.world.level.Level;
@@ -8,7 +9,8 @@ import net.minecraft.world.level.Level;
 public final class SniperUnit extends RiflemanUnit {
     public SniperUnit(EntityType<? extends Pillager> type, Level level) { super(type, level); }
     @Override protected String gunName() { return "ai_awp"; }
-    @Override protected int magazineSize() { return 10; }
+    @Override protected int magazineSize() { return 5; }
+    @Override protected FireMode gunFireMode() { return FireMode.SEMI; }
     @Override protected float gunRange() { return 60f; }
     @Override protected float shotCooldown() { return 35f; }
 }

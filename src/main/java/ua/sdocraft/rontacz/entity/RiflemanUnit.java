@@ -30,6 +30,7 @@ public class RiflemanUnit extends PillagerUnit {
     }
 
     protected String gunName() { return "ak47"; }
+    protected FireMode gunFireMode() { return FireMode.AUTO; }
     protected int magazineSize() { return MAGAZINE; }
     protected float gunRange() { return 28.0f; }
     protected float shotCooldown() { return 5.0f; }
@@ -68,7 +69,7 @@ public class RiflemanUnit extends PillagerUnit {
           .setId(new ResourceLocation("tacz", gunName()))
           .setAmmoCount(magazineSize())
           .setAmmoInBarrel(true)
-          .setFireMode(FireMode.AUTO)
+          .setFireMode(gunFireMode())
           .build();
         if (gun.isEmpty()) {
             RonTacZ.LOGGER.error("TaCZ AK-47 missing");
@@ -111,5 +112,6 @@ public class RiflemanUnit extends PillagerUnit {
                  Math.atan2(delta.y, Math.hypot(delta.x, delta.z)));
         ShootResult shot = IGunOperator.fromLivingEntity(this).shoot(() -> pitch, () -> yaw);
         if (shot == ShootResult.NO_AMMO) reloadCountdown = RELOAD_TICKS;
+        else if (shot == ShootResult.NEED_BOLT) IGunOperator.fromLivingEntity(this).bolt();
     }
 }
