@@ -42,7 +42,7 @@ public final class TankCrewUnit extends RiflemanUnit {
         tank.setAiTurretTargetUUID(target != null && target.isAlive() ? target.getStringUUID() : "undefined");
         // Test-load ammunition if there is none: native SBW firing remains authoritative.
         GunData gun=tank.getGunData(0);
-        if (gun != null && gun.getAmmo().get() <= 0 && tickCount % 20 == 0) gun.getAmmo().set(1);
+        if (gun != null && gun.ammo.get() <= 0 && tickCount % 20 == 0) gun.ammo.set(1);
         if (target != null && target.isAlive() && tickCount % 100 == 0) {
             tank.setAiTurretTargetUUID(target.getStringUUID());
         }
