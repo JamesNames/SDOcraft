@@ -15,7 +15,7 @@ apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'org.spongepowered.mixin'
 apply plugin: 'org.parchmentmc.librarian.forgegradle'
 apply plugin: 'eclipse'
-version = '0.1.0'
+version = '0.2.0'
 group = 'ua.sdocraft.rontacz'
 archivesBaseName = 'rontacz-riflemen'
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
@@ -40,12 +40,14 @@ repositories {
     forRepositories(fg.repository)
     filter { includeGroup 'maven.modrinth' }
   }
+  maven { url = 'https://www.cursemaven.com' }
   mavenCentral()
 }
 dependencies {
   minecraft 'net.minecraftforge:forge:1.20.1-47.4.0'
   implementation fg.deobf('maven.modrinth:FdbVHPk2:BpeAy6l2')
   implementation fg.deobf('maven.modrinth:SzzJttH8:AzCBJlex')
+  implementation fg.deobf('curse.maven:superb-warfare-1218165:9019882')
   annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 }
 mixin { add sourceSets.main, 'rontacz.refmap.json' }

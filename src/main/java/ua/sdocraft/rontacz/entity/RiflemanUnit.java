@@ -29,6 +29,11 @@ public class RiflemanUnit extends PillagerUnit {
         super(type, level);
     }
 
+    protected String gunName() { return "ak47"; }
+    protected int magazineSize() { return MAGAZINE; }
+    protected float gunRange() { return 28.0f; }
+    protected float shotCooldown() { return 5.0f; }
+
     @Override
     protected void registerGoals() {
         super.registerGoals();
@@ -44,24 +49,24 @@ public class RiflemanUnit extends PillagerUnit {
     }
     @Override
     public float getAttackCooldown() {
-        return 2.0f * getAttackCooldownMultiplier();
+        return shotCooldown() * getAttackCooldownMultiplier();
     }
     @Override
-    public float getNonBaseAttacksPerSecond() { return 10.0f; }
+    public float getNonBaseAttacksPerSecond() { return 20f / Math.max(1,shotCooldown()); }
     @Override
     public float getAttacksPerSecond() {
         return 20.0f / Math.max(1.0f, getAttackCooldown());
     }
     @Override
-    public float getAttackRange() { return 28.0f; }
+    public float getAttackRange() { return gunRange(); }
 
     @Override
     public void setupEquipmentAndUpgradesServer() {
         if (this.level().isClientSide()) return;
         if (getMainHandItem().getItem() instanceof IGun) return;
         ItemStack gun = GunItemBuilder.create()
-          .setId(new ResourceLocation("tacz", "ak47"))
-          .setAmmoCount(MAGAZINE)
+          .setId(new ResourceLocation("tacz", gunName()))
+          .setAmmoCount(magazineSize())
           .setAmmoInBarrel(true)
           .setFireMode(FireMode.AUTO)
           .build();
@@ -85,7 +90,7 @@ public class RiflemanUnit extends PillagerUnit {
             gunDrawn = true;
         }
         if (reloadCountdown > 0 && --reloadCountdown == 0) {
-            iGun.setCurrentAmmoCount(gun, MAGAZINE);
+            iGun.setCurrentAmmoCount(gun, magazineSize());
         }
     }
 

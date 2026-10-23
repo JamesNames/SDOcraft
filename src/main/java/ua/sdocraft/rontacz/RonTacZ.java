@@ -15,6 +15,7 @@ import com.mojang.logging.LogUtils;
 import ua.sdocraft.rontacz.entity.ModEntities;
 import ua.sdocraft.rontacz.entity.RiflemanUnit;
 import ua.sdocraft.rontacz.production.RiflemanProd;
+import ua.sdocraft.rontacz.production.ArmyUnitProd;
 
 @Mod(RonTacZ.MOD_ID)
 public final class RonTacZ {
@@ -30,6 +31,9 @@ public final class RonTacZ {
     }
     private static void registerAttributes(EntityAttributeCreationEvent event) {
         event.put(ModEntities.RIFLEMAN.get(), RiflemanUnit.createAttributes().build());
+        event.put(ModEntities.SNIPER.get(), RiflemanUnit.createAttributes().build());
+        event.put(ModEntities.MACHINE_GUNNER.get(), RiflemanUnit.createAttributes().build());
+        event.put(ModEntities.TANK_CREW.get(), RiflemanUnit.createAttributes().build());
     }
     private static void commonSetup(FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
@@ -40,7 +44,20 @@ public final class RonTacZ {
                     new ResourceLocation(MOD_ID, "rifleman"),
                     new RiflemanProd());
             Buildings.BARRACKS.productions.add(rifleman, Keybindings.abilitySlot3);
-            LOGGER.info("RoN x TaCZ: rifleman added to villager Barracks");
+
+            var sniper=Registry.register(ReignOfNetherRegistries.PRODUCTION_ITEM,
+                new ResourceLocation(MOD_ID,"sniper"),
+                new ArmyUnitProd("Sniper [AWM]",ModEntities.SNIPER::get,false));
+            var machineGunner=Registry.register(ReignOfNetherRegistries.PRODUCTION_ITEM,
+                new ResourceLocation(MOD_ID,"machine_gunner"),
+                new ArmyUnitProd("Machine Gunner [M249]",ModEntities.MACHINE_GUNNER::get,false));
+            var tank=Registry.register(ReignOfNetherRegistries.PRODUCTION_ITEM,
+                new ResourceLocation(MOD_ID,"m1a2"),
+                new ArmyUnitProd("M1A2 Abrams",ModEntities.TANK_CREW::get,true));
+            Buildings.BARRACKS.productions.add(sniper, Keybindings.abilitySlot4);
+            Buildings.BARRACKS.productions.add(machineGunner, Keybindings.abilitySlot5);
+            Buildings.BARRACKS.productions.add(tank, Keybindings.abilitySlot6);
+            LOGGER.info("RoN x TaCZ x SBW: rifleman, sniper, MG, M1A2 registered");
         });
     }
 }

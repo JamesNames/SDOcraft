@@ -14,5 +14,8 @@ public final class ModClientEvents {
     @SubscribeEvent
     public static void registerRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.RIFLEMAN.get(), ctx -> (EntityRenderer) new PillagerUnitRenderer(ctx));
+        event.registerEntityRenderer(ModEntities.SNIPER.get(), ctx -> (EntityRenderer) new PillagerUnitRenderer(ctx));
+        event.registerEntityRenderer(ModEntities.MACHINE_GUNNER.get(), ctx -> (EntityRenderer) new PillagerUnitRenderer(ctx));
+        event.registerEntityRenderer(ModEntities.TANK_CREW.get(), ctx -> (EntityRenderer) new PillagerUnitRenderer(ctx));
     }
 }

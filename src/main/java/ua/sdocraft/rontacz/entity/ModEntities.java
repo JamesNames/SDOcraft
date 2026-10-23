@@ -10,6 +10,18 @@ public final class ModEntities {
     private ModEntities() {}
     public static final DeferredRegister<EntityType<?>> ENTITIES =
         DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, RonTacZ.MOD_ID);
+    public static final RegistryObject<EntityType<SniperUnit>> SNIPER = ENTITIES.register(
+        "sniper_unit", () -> EntityType.Builder
+            .of(SniperUnit::new, MobCategory.CREATURE)
+            .sized(0.6f, 1.95f).clientTrackingRange(100).build("rontacz:sniper_unit"));
+    public static final RegistryObject<EntityType<MachineGunnerUnit>> MACHINE_GUNNER = ENTITIES.register(
+        "machine_gunner_unit", () -> EntityType.Builder
+            .of(MachineGunnerUnit::new, MobCategory.CREATURE)
+            .sized(0.6f, 1.95f).clientTrackingRange(100).build("rontacz:machine_gunner_unit"));
+    public static final RegistryObject<EntityType<TankCrewUnit>> TANK_CREW = ENTITIES.register(
+        "tank_crew_unit", () -> EntityType.Builder
+            .of(TankCrewUnit::new, MobCategory.CREATURE)
+            .sized(0.6f, 1.95f).clientTrackingRange(100).build("rontacz:tank_crew_unit"));
     public static final RegistryObject<EntityType<RiflemanUnit>> RIFLEMAN = ENTITIES.register(
         "rifleman_unit", () -> EntityType.Builder
            .of(RiflemanUnit::new, MobCategory.CREATURE)

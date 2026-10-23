@@ -30,3 +30,16 @@ mandatory=true
 versionRange="[1.1.8,)"
 ordering="AFTER"
 side="BOTH"
+
+[[dependencies.rontacz]]
+modId="superbwarfare"
+mandatory=true
+versionRange="[0.8.9.2,)"
+ordering="AFTER"
+side="BOTH"
+[[dependencies.rontacz]]
+modId="kotlinforforge"
+mandatory=true
+versionRange="[4.12.0,)"
+ordering="AFTER"
+side="BOTH"
