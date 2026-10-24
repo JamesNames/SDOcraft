@@ -4,99 +4,173 @@ import com.atsuishio.superbwarfare.data.gun.GunData;
 import com.atsuishio.superbwarfare.data.vehicle.subdata.VehicleType;
 import com.atsuishio.superbwarfare.entity.vehicle.base.VehicleEntity;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.monster.Monster;
-import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import ua.sdocraft.rontacz.RonTacZ;
 import ua.sdocraft.rontacz.faction.MilitaryFaction;
 
-import java.util.List;
-
-/** Server RTS combat driver for real SBW M1A2/T-90A cannons (not magical damage). */
+/**
+ * Player-command-only vehicle combat. Never search for nearby mobs.
+ *
+ * RoN directly sets SelectedTargetGoal.forced for an explicit ATTACK order.
+ * The driver's ordinary Mob.getTarget() is not authoritative; passive vanilla
+ * aggro caused friendly fire in v0.4.6.
+ */
 public final class RTSTankCombatController {
     private RTSTankCombatController() {}
-    private static final double COMBAT_RANGE = 105;
-    private static final int FIRE_INTERVAL = 120;
+
+    private static final double MAX_RANGE = 110.0;
+    private static final int TANK_RELOAD_TICKS = 110;
+    private static final int HELI_ROCKET_TICKS = 45;
 
     public static void tick(TankCrewUnit driver) {
         if (!(driver.level() instanceof ServerLevel world) || !driver.isAlive()) return;
-        if (!(driver.getVehicle() instanceof VehicleEntity tank)) return;
-        if (tank.getVehicleType() != VehicleType.TANK) return;
-        if (!(driver.getClass() == TankCrewUnit.class || driver instanceof T90CrewUnit)
-            || tank.isWreck() || tank.getFirstPassenger() != driver) return;
-        if (tank.getHealth() <= 0) return;
+        if (!(driver.getVehicle() instanceof VehicleEntity vehicle)) return;
+        if (vehicle.isWreck() || vehicle.getHealth() <= 0
+            || vehicle.getFirstPassenger() != driver) return;
 
-        LivingEntity target = driver.getTarget();
-        if (target == null || !isEnemy(driver, target)) {
-            // Search sparingly. RoN's RTS drivers may not acquire vanilla AI targets.
-            if (world.getGameTime() % 20 == tank.getId() % 20) {
-                target = findOpponent(world, driver, tank);
-                driver.setTarget(target);
-            } else target = null;
-        }
-        if (target == null) {
-            tank.setAiTurretTargetUUID("undefined");
-            return;
-        }
-        driver.setTarget(target); // SBW's native Mob driver shooting requires mob.target
-        tank.setAiTurretTargetUUID(target.getStringUUID());
-
-        // Keep turret trained on the real vehicle bounding box rather than rider head.
-        tank.turretAutoAimFromUuid(target.getStringUUID(), driver);
-        if (world.getGameTime() % FIRE_INTERVAL != (tank.getId() % FIRE_INTERVAL)) return;
-
-        GunData cannon = tank.getGunData(0, 0);
-        if (cannon == null) return;
-        // Training/test mode: refill one genuine SBW AP cannon shell when empty.
-        // GunData still applies its own shooting/reload logic and projectile physics.
-        if (cannon.ammo.get() <= 0) cannon.ammo.set(1);
-        if (!cannon.canShoot(tank)) {
-            RonTacZ.LOGGER.warn("RTS tank {} cannot fire: ammo={} selectedWeapon={} health={} target={}",
-                tank.getId(), cannon.ammo.get(), tank.getWeaponIndex(0), tank.getHealth(), target.getId());
+        // If a player gave a MOVE / STOP command, the forced target is cleared
+        // by Reign of Nether. No shooting, no scanning, no fallback enemies.
+        var selected = driver.getTargetGoal();
+        LivingEntity target = selected != null && selected.forced
+            ? selected.getTarget() : null;
+        if (target == null || !isSafeEnemy(driver, target)) {
+            vehicle.setAiTurretTargetUUID("undefined");
+            // Suppress residual vanilla targeting and SBW native auto-fire.
+            if (driver.getTarget() != null) driver.setTarget(null);
             return;
         }
 
-        Entity victim = target.getVehicle() != null ? target.getVehicle() : target;
+        Entity victim = target.getVehicle() instanceof VehicleEntity t
+            ? t : target;
+        if (victim == vehicle || !victim.isAlive()) return;
+
         Vec3 aim = victim.getBoundingBox().getCenter();
-        tank.vehicleShoot(driver, target.getUUID(), aim);
-        RonTacZ.LOGGER.info("RTS tank cannon fired: tank={} health={} target={} targetVehicle={} owner={}",
-            tank.getId(), tank.getHealth(), target.getId(), victim.getId(), driver.getOwnerName());
+        double distanceSqr = aim.distanceToSqr(vehicle.getBoundingBox().getCenter());
+        if (distanceSqr > MAX_RANGE * MAX_RANGE) return;
+
+        // Only a direct player target reaches this point.
+        driver.setTarget(target);
+        vehicle.setAiTurretTargetUUID(target.getStringUUID());
+        if (vehicle.getVehicleType() == VehicleType.TANK) {
+            aimTank(vehicle, aim);
+            if (world.getGameTime() % TANK_RELOAD_TICKS != vehicle.getId() % TANK_RELOAD_TICKS) return;
+            fireTank(world, vehicle, driver, target, victim, aim);
+        } else if (driver instanceof Mi28CrewUnit
+                && vehicle.getVehicleType() == VehicleType.HELICOPTER) {
+            aimHelicopter(vehicle, aim);
+            if (world.getGameTime() % HELI_ROCKET_TICKS != vehicle.getId() % HELI_ROCKET_TICKS) return;
+            fireHelicopter(world, vehicle, driver, target, victim, aim);
+        }
     }
 
-    private static boolean isEnemy(TankCrewUnit driver, LivingEntity candidate) {
-        if (candidate == driver || !candidate.isAlive()) return false;
-        if (candidate instanceof Monster && !(candidate instanceof RiflemanUnit)) return true;
-        if (!(candidate instanceof RiflemanUnit other)) return false;
-        String owner=driver.getOwnerName();
-        String foe=other.getOwnerName();
-        if (owner == null || foe == null || owner.equals(foe)) return false;
-        MilitaryFaction.Side mySide=MilitaryFaction.sideOf(driver.level(), owner);
-        MilitaryFaction.Side theirSide=MilitaryFaction.sideOf(candidate.level(), foe);
-        return mySide == null || theirSide == null || mySide != theirSide;
+    private static void aimTank(VehicleEntity tank, Vec3 aim) {
+        // Drive the real turret, not the transform of an invisible RTS rider.
+        Vec3 barrelOrigin=tank.getShootPos("Cannon", 1f);
+        Vec3 desired=aim.subtract(barrelOrigin);
+        if (desired.lengthSqr() > 0.1) tank.turretAutoAimFromVector(desired.normalize());
     }
 
-    private static LivingEntity findOpponent(ServerLevel level, TankCrewUnit driver, VehicleEntity tank) {
-        List<LivingEntity> near=level.getEntitiesOfClass(
-            LivingEntity.class, new AABB(tank.blockPosition()).inflate(COMBAT_RANGE),
-            soldier -> isEnemy(driver,soldier));
-        // Engage opposing armor first.
-        LivingEntity best=null;
-        double bestDistance=COMBAT_RANGE*COMBAT_RANGE;
-        for (LivingEntity other:near) {
-            double dist=tank.position().distanceToSqr(other.position());
-            if (other.getVehicle() instanceof VehicleEntity && dist<bestDistance) {
-                best=other;
-                bestDistance=dist;
-            }
+    private static void aimHelicopter(VehicleEntity heli, Vec3 aim) {
+        // The Mi-28 pilot has Rocket / DriverMissile, not the gunner's Cannon.
+        // Level flight remains controlled by HelicopterFlightController.
+        Vec3 diff=aim.subtract(heli.position());
+        if (diff.horizontalDistanceSqr() > 1.0) {
+            float yaw=(float)Math.toDegrees(Math.atan2(-diff.x,diff.z));
+            heli.setYRot(net.minecraft.util.Mth.approachDegrees(heli.getYRot(),yaw,4.0f));
         }
-        if (best!=null) return best;
-        for (LivingEntity other:near) {
-            double dist=tank.position().distanceToSqr(other.position());
-            if (dist<bestDistance) {best=other;bestDistance=dist;}
+    }
+
+    private static void fireTank(ServerLevel world, VehicleEntity vehicle, TankCrewUnit driver,
+                                 LivingEntity target, Entity victim, Vec3 aim) {
+        GunData gun=vehicle.getGunData("Cannon");
+        if (gun == null) {
+            RonTacZ.LOGGER.warn("RTS tank {}: cannon weapon not found",vehicle.getId());
+            return;
         }
-        return best;
+        Vec3 muzzle=vehicle.getShootPos("Cannon", 1f);
+        Vec3 desired=aim.subtract(muzzle).normalize();
+        Vec3 barrel=vehicle.getBarrelVector(1f).normalize();
+        if (desired.dot(barrel) < 0.978) return; // within ~12 degrees
+        if (!clearFriendlyLine(world,driver,vehicle,muzzle,aim,8)) return;
+
+        // Sandbox prototype: one real SBW round. The native gun decides if
+        // reload/heat prevents firing and creates the genuine projectile.
+        if (gun.ammo.get() <= 0) gun.ammo.set(1);
+        if (!gun.canShoot(vehicle)) {
+            RonTacZ.LOGGER.warn("RTS tank {}: cannon not ready; ammo={} victim={}",
+                vehicle.getId(),gun.ammo.get(),victim.getId());
+            return;
+        }
+        vehicle.vehicleShoot(driver,"Cannon",target.getUUID(),aim);
+        RonTacZ.LOGGER.info("RTS ordered tank fire: vehicle={}, target={}",
+            vehicle.getId(),victim.getId());
+    }
+
+    private static void fireHelicopter(ServerLevel world, VehicleEntity heli,
+                                       TankCrewUnit driver, LivingEntity target,
+                                       Entity victim, Vec3 aim) {
+        GunData rockets=heli.getGunData("Rocket");
+        if (rockets == null) {
+            RonTacZ.LOGGER.warn("Mi-28 {} missing pilot Rocket weapon",heli.getId());
+            return;
+        }
+        Vec3 launch=heli.getShootPos("Rocket",1f);
+        Vec3 desired=aim.subtract(launch).normalize();
+        Vec3 forward=heli.getLookAngle().normalize();
+        if (desired.dot(forward) < 0.955) return; // do not fire sideways
+        if (!clearFriendlyLine(world,driver,heli,launch,aim,10)) return;
+        if (rockets.ammo.get() <= 0) rockets.ammo.set(1);
+        if (!rockets.canShoot(heli)) {
+            RonTacZ.LOGGER.warn("Mi-28 {} rockets not ready ammo={} target={}",
+                heli.getId(),rockets.ammo.get(),victim.getId());
+            return;
+        }
+        heli.vehicleShoot(driver,"Rocket",target.getUUID(),aim);
+        RonTacZ.LOGGER.info("RTS ordered Mi-28 rockets: helicopter={}, target={}",
+            heli.getId(),victim.getId());
+    }
+
+    /** A fired cannon/rocket can splash-damage friendlies near the target or path. */
+    private static boolean clearFriendlyLine(ServerLevel level,TankCrewUnit driver,
+                                             VehicleEntity shooter,Vec3 from,Vec3 to,
+                                             double blastRadius) {
+        AABB corridor=new AABB(from,to).inflate(blastRadius);
+        for(LivingEntity other:level.getEntitiesOfClass(LivingEntity.class,corridor)) {
+            if(other == driver || !other.isAlive() || other.getVehicle() == shooter)continue;
+            if(!isFriendly(driver,other))continue;
+            Entity body=other.getVehicle() instanceof VehicleEntity veh?veh:other;
+            Vec3 p=body.getBoundingBox().getCenter();
+            if(p.distanceToSqr(to) < blastRadius*blastRadius) return false;
+            // shortest distance of friendly vehicle to projectile line
+            Vec3 line=to.subtract(from);
+            double len=line.lengthSqr();
+            if(len<0.01) return false;
+            double t=net.minecraft.util.Mth.clamp(p.subtract(from).dot(line)/len,0,1);
+            if(from.add(line.scale(t)).distanceToSqr(p) < 4.0*4.0) return false;
+        }
+        return true;
+    }
+
+    private static boolean isFriendly(TankCrewUnit shooter, LivingEntity other) {
+        if(other==shooter) return true;
+        if(shooter.isAlliedTo(other)) return true;
+        if(other instanceof RiflemanUnit unit) {
+            String a=shooter.getOwnerName(), b=unit.getOwnerName();
+            if(a!=null && a.equals(b)) return true;
+            MilitaryFaction.Side sa=MilitaryFaction.sideOf(shooter.level(),a);
+            MilitaryFaction.Side sb=MilitaryFaction.sideOf(unit.level(),b);
+            return sa!=null && sa==sb;
+        }
+        return false;
+    }
+
+    private static boolean isSafeEnemy(TankCrewUnit shooter, LivingEntity other) {
+        if(other==shooter || !other.isAlive() || isFriendly(shooter,other))return false;
+        if(other instanceof Player player) return !player.isCreative() && !player.isSpectator();
+        return true;
     }
 }

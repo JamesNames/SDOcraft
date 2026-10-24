@@ -1,7 +1,6 @@
 package ua.sdocraft.rontacz.entity;
 
 import com.atsuishio.superbwarfare.entity.vehicle.base.VehicleEntity;
-import com.atsuishio.superbwarfare.data.gun.GunData;
 import com.solegendary.reignofnether.unit.goals.MoveToTargetBlockGoal;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.phys.AABB;
@@ -48,13 +47,7 @@ public class TankCrewUnit extends RiflemanUnit {
         if (tank.getVehicleType() != VehicleType.HELICOPTER && !tank.getEngineStartOver()) tank.setEngineStartOver(true);
         // Energy is fuel, not health. No per-tick refueling or HP reset.
         // Driving is handled once per server level tick by TankServerEvents.
-        LivingEntity target=getTarget();
-        tank.setAiTurretTargetUUID(target != null && target.isAlive() ? target.getStringUUID() : "undefined");
-        // Test-load ammunition if there is none: native SBW firing remains authoritative.
-        GunData gun=tank.getGunData(0);
-        if (gun != null && gun.ammo.get() <= 0 && tickCount % 20 == 0) gun.ammo.set(1);
-        if (target != null && target.isAlive() && tickCount % 100 == 0) {
-            tank.setAiTurretTargetUUID(target.getStringUUID());
-        }
+        // Combat targeting is owned exclusively by RTSTankCombatController.
+        // No automatic target selection or ammunition changes here.
     }
 }
