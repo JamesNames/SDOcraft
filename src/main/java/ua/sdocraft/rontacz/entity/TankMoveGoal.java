@@ -118,11 +118,18 @@ public final class TankMoveGoal extends MoveToTargetBlockGoal {
         float desiredYaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
         float deltaYaw = Mth.wrapDegrees(desiredYaw - tank.getYRot());
         short keys = 0;
-        // Positive yaw correction means LEFT; SBW tracked engine adjusts yaw this way.
-        if (deltaYaw > 7f) keys |= 1;
-        else if (deltaYaw < -7f) keys |= 2;
-        if (Math.abs(deltaYaw) < 75f) keys |= 4;
+        // Superb Warfare tracked engine applies NEGATIVE yaw for LEFT (bit 0),
+        // and POSITIVE yaw for RIGHT (bit 1).  Previous versions reversed this.
+        if (deltaYaw > 8f) keys |= 2;       // turn right -> yaw increases
+        else if (deltaYaw < -8f) keys |= 1; // turn left -> yaw decreases
+        if (Math.abs(deltaYaw) < 68f) keys |= 4; // drive forward only when aligned
         tank.processInput(keys);
+
+        if (worldTick % 60L == 0L) {
+            RonTacZ.LOGGER.info("M1A2 RTS drive: tank={} pos={} target={} yaw={} desiredYaw={} error={} keys={} speed={} onGround={} energy={}",
+                tank.getId(), tank.blockPosition(), moveTarget, tank.getYRot(), desiredYaw, deltaYaw,
+                (int) keys, tank.getDeltaMovement().horizontalDistance(), tank.onGround(), tank.getEnergy());
+        }
 
         Vec3 current = tank.position();
         if (previousTankPosition != null
