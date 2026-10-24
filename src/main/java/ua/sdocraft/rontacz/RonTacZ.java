@@ -36,6 +36,10 @@ public final class RonTacZ {
         event.put(ModEntities.TANK_CREW.get(), RiflemanUnit.createAttributes().build());
         event.put(ModEntities.T90_CREW.get(), RiflemanUnit.createAttributes().build());
         event.put(ModEntities.MI28_CREW.get(), RiflemanUnit.createAttributes().build());
+        event.put(ModEntities.RPG_UNIT.get(), RiflemanUnit.createAttributes().build());
+        event.put(ModEntities.IGLA_UNIT.get(), RiflemanUnit.createAttributes().build());
+        event.put(ModEntities.JAVELIN_UNIT.get(), RiflemanUnit.createAttributes().build());
+        event.put(ModEntities.SODAYO_TOW_CREW.get(), RiflemanUnit.createAttributes().build());
     }
     private static void commonSetup(FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
@@ -67,7 +71,25 @@ public final class RonTacZ {
                 new ArmyUnitProd("Mi-28 Helicopter", ModEntities.MI28_CREW::get, "mi28"));
             Buildings.BARRACKS.productions.add(t90, Keybindings.abilitySlot7);
             Buildings.BARRACKS.productions.add(mi28, Keybindings.abilitySlot8);
-            LOGGER.info("RoN x TaCZ x SBW: rifleman, sniper, MG, M1A2, T-90A and Mi-28 registered");
+
+            var rpg=Registry.register(ReignOfNetherRegistries.PRODUCTION_ITEM,
+                new ResourceLocation(MOD_ID,"rpg_infantry"),
+                new ArmyUnitProd("AT Infantry [RPG]",ModEntities.RPG_UNIT::get,false));
+            var igla=Registry.register(ReignOfNetherRegistries.PRODUCTION_ITEM,
+                new ResourceLocation(MOD_ID,"igla_infantry"),
+                new ArmyUnitProd("MANPADS [Igla 9K38]",ModEntities.IGLA_UNIT::get,false));
+            var javelin=Registry.register(ReignOfNetherRegistries.PRODUCTION_ITEM,
+                new ResourceLocation(MOD_ID,"javelin_infantry"),
+                new ArmyUnitProd("ATGM [Javelin]",ModEntities.JAVELIN_UNIT::get,false));
+            var sodayo=Registry.register(ReignOfNetherRegistries.PRODUCTION_ITEM,
+                new ResourceLocation(MOD_ID,"sodayo_tow"),
+                new ArmyUnitProd("Sodayo TOW ATGM",ModEntities.SODAYO_TOW_CREW::get,"sodayo_tow"));
+            Buildings.BARRACKS.productions.add(rpg,Keybindings.abilitySlot9);
+            Buildings.BARRACKS.productions.add(igla,Keybindings.abilitySlot10);
+            // A temporary military workshop, with no conflicts with Blacksmith slots 1-6.
+            Buildings.BLACKSMITH.productions.add(javelin,Keybindings.abilitySlot7);
+            Buildings.BLACKSMITH.productions.add(sodayo,Keybindings.abilitySlot8);
+            LOGGER.info("RoN x TaCZ x SBW: RPG, Igla, Javelin, Sodayo TOW and existing units registered");
         });
     }
 }

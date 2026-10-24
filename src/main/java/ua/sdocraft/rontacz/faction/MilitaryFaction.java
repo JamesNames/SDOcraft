@@ -82,6 +82,7 @@ public final class MilitaryFaction {
         if (e instanceof Mi28CrewUnit) return 5;
         if (e instanceof TankCrewUnit) return 4;
         if (e instanceof SniperUnit) return 3;
+        if (e instanceof MissileSpecialistUnit) return 3;
         if (e instanceof MachineGunnerUnit) return 2;
         return 0;
     }
@@ -103,6 +104,10 @@ public final class MilitaryFaction {
         if (e instanceof Mi28CrewUnit) return "Пилот Ми-28";
         if (e instanceof TankCrewUnit) return "Танкист";
         if (e instanceof SniperUnit) return "Снайпер";
+        if (e instanceof RpgUnit) return "Гранатомётчик РПГ";
+        if (e instanceof IglaUnit) return "Расчёт ПЗРК";
+        if (e instanceof JavelinUnit) return "Оператор Javelin";
+        if (e instanceof SodayoTowCrewUnit) return "Водитель ПТРК";
         if (e instanceof MachineGunnerUnit) return "Пулемётчик";
         return "Стрелок";
     }

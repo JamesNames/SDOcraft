@@ -19,5 +19,9 @@ public final class ModClientEvents {
         event.registerEntityRenderer(ModEntities.TANK_CREW.get(), ctx -> (EntityRenderer) new PillagerUnitRenderer(ctx));
         event.registerEntityRenderer(ModEntities.T90_CREW.get(), ctx -> (EntityRenderer) new PillagerUnitRenderer(ctx));
         event.registerEntityRenderer(ModEntities.MI28_CREW.get(), ctx -> (EntityRenderer) new PillagerUnitRenderer(ctx));
+        event.registerEntityRenderer(ModEntities.RPG_UNIT.get(), ctx -> (EntityRenderer) new PillagerUnitRenderer(ctx));
+        event.registerEntityRenderer(ModEntities.IGLA_UNIT.get(), ctx -> (EntityRenderer) new PillagerUnitRenderer(ctx));
+        event.registerEntityRenderer(ModEntities.JAVELIN_UNIT.get(), ctx -> (EntityRenderer) new PillagerUnitRenderer(ctx));
+        event.registerEntityRenderer(ModEntities.SODAYO_TOW_CREW.get(), ctx -> (EntityRenderer) new PillagerUnitRenderer(ctx));
     }
 }

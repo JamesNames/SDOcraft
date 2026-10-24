@@ -15,7 +15,7 @@ apply plugin: 'net.minecraftforge.gradle'
 apply plugin: 'org.spongepowered.mixin'
 apply plugin: 'org.parchmentmc.librarian.forgegradle'
 apply plugin: 'eclipse'
-version = '0.4.8'
+version = '0.4.9'
 group = 'ua.sdocraft.rontacz'
 archivesBaseName = 'rontacz-riflemen'
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)

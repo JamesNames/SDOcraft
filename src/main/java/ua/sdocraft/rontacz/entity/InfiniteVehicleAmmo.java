@@ -38,6 +38,7 @@ public final class InfiniteVehicleAmmo {
         }
 
         refill(vehicle,"Cannon",1);
+        refill(vehicle,"Missile",1);
         refill(vehicle,"MachineGun",100);
         refill(vehicle,"PassengerMachineGun",100);
         refill(vehicle,"Rocket",42);

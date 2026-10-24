@@ -5,5 +5,9 @@
   "entity.rontacz.tank_crew_unit": "Экипаж M1A2",
   "entity.rontacz.t90_crew_unit": "Экипаж Т-90А",
   "entity.rontacz.mi28_crew_unit": "Пилот Ми-28",
-  "error.rontacz.wrong_faction_vehicle": "Техника другой стороны! ВФСМ используют Abrams, ВНР используют Т-90А"
+  "error.rontacz.wrong_faction_vehicle": "Техника другой стороны! ВФСМ используют Abrams, ВНР используют Т-90А",
+  "entity.rontacz.rpg_unit": "Гранатомётчик РПГ",
+  "entity.rontacz.igla_unit": "Расчёт ПЗРК «Игла»",
+  "entity.rontacz.javelin_unit": "Оператор Javelin",
+  "entity.rontacz.sodayo_tow_crew_unit": "Экипаж Sodayo ПТРК"
 }

@@ -5,5 +5,9 @@
   "entity.rontacz.tank_crew_unit": "M1A2 Tank Crew",
   "entity.rontacz.t90_crew_unit": "T-90A Tank Crew",
   "entity.rontacz.mi28_crew_unit": "Mi-28 Pilot",
-  "error.rontacz.wrong_faction_vehicle": "This vehicle belongs to the opposing side: VFSM use Abrams, VNR use T-90A"
+  "error.rontacz.wrong_faction_vehicle": "This vehicle belongs to the opposing side: VFSM use Abrams, VNR use T-90A",
+  "entity.rontacz.rpg_unit": "RPG Infantry",
+  "entity.rontacz.igla_unit": "Igla MANPADS",
+  "entity.rontacz.javelin_unit": "Javelin ATGM Infantry",
+  "entity.rontacz.sodayo_tow_crew_unit": "Sodayo TOW Driver"
 }

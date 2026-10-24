@@ -60,7 +60,11 @@ public final class RTSTankCombatController {
         // Only a direct player target reaches this point.
         driver.setTarget(target);
         vehicle.setAiTurretTargetUUID(target.getStringUUID());
-        if (vehicle.getVehicleType() == VehicleType.TANK) {
+        if (driver instanceof SodayoTowCrewUnit) {
+            aimTow(vehicle,aim);
+            if (world.getGameTime() % 160 != vehicle.getId() % 160) return;
+            fireTow(world,vehicle,driver,target,victim,aim);
+        } else if (vehicle.getVehicleType() == VehicleType.TANK) {
             aimTank(vehicle, aim);
             if (world.getGameTime() % TANK_RELOAD_TICKS != vehicle.getId() % TANK_RELOAD_TICKS) return;
             fireTank(world, vehicle, driver, target, victim, aim);
@@ -70,6 +74,31 @@ public final class RTSTankCombatController {
             if (world.getGameTime() % HELI_ROCKET_TICKS != vehicle.getId() % HELI_ROCKET_TICKS) return;
             fireHelicopter(world, vehicle, driver, target, victim, aim);
         }
+    }
+
+
+    private static void aimTow(VehicleEntity tow, Vec3 aim) {
+        Vec3 origin=tow.getShootPos("Missile",1f);
+        Vec3 diff=aim.subtract(origin);
+        if(diff.lengthSqr()>0.01) tow.turretAutoAimFromVector(diff.normalize());
+    }
+
+    private static void fireTow(ServerLevel world, VehicleEntity tow, TankCrewUnit driver,
+                                LivingEntity target, Entity victim, Vec3 aim) {
+        GunData missile=tow.getGunData("Missile");
+        if(missile==null)return;
+        Vec3 launch=tow.getShootPos("Missile",1f);
+        Vec3 desired=aim.subtract(launch).normalize();
+        Vec3 barrel=tow.getBarrelVector(1f).normalize();
+        if(desired.dot(barrel)<0.970)return;
+        if(!missile.canShoot(tow)) {
+            RonTacZ.LOGGER.warn("RTS Sodayo TOW cannot fire: vehicle={} ammo={} target={}",
+                tow.getId(),missile.ammo.get(),victim.getId());
+            return;
+        }
+        tow.vehicleShoot(driver,"Missile",target.getUUID(),aim);
+        RonTacZ.LOGGER.info("RTS Sodayo TOW missile launched: vehicle={} target={}",
+            tow.getId(),victim.getId());
     }
 
     private static void aimTank(VehicleEntity tank, Vec3 aim) {

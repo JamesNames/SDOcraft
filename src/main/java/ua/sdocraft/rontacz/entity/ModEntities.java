@@ -10,6 +10,18 @@ public final class ModEntities {
     private ModEntities() {}
     public static final DeferredRegister<EntityType<?>> ENTITIES =
         DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, RonTacZ.MOD_ID);
+    public static final RegistryObject<EntityType<RpgUnit>> RPG_UNIT = ENTITIES.register(
+        "rpg_unit", () -> EntityType.Builder.of(RpgUnit::new, MobCategory.CREATURE)
+            .sized(0.6f, 1.95f).clientTrackingRange(100).build("rontacz:rpg_unit"));
+    public static final RegistryObject<EntityType<IglaUnit>> IGLA_UNIT = ENTITIES.register(
+        "igla_unit", () -> EntityType.Builder.of(IglaUnit::new, MobCategory.CREATURE)
+            .sized(0.6f, 1.95f).clientTrackingRange(100).build("rontacz:igla_unit"));
+    public static final RegistryObject<EntityType<JavelinUnit>> JAVELIN_UNIT = ENTITIES.register(
+        "javelin_unit", () -> EntityType.Builder.of(JavelinUnit::new, MobCategory.CREATURE)
+            .sized(0.6f, 1.95f).clientTrackingRange(100).build("rontacz:javelin_unit"));
+    public static final RegistryObject<EntityType<SodayoTowCrewUnit>> SODAYO_TOW_CREW = ENTITIES.register(
+        "sodayo_tow_crew_unit", () -> EntityType.Builder.of(SodayoTowCrewUnit::new, MobCategory.CREATURE)
+            .sized(0.6f, 1.95f).clientTrackingRange(100).build("rontacz:sodayo_tow_crew_unit"));
     public static final RegistryObject<EntityType<SniperUnit>> SNIPER = ENTITIES.register(
         "sniper_unit", () -> EntityType.Builder
             .of(SniperUnit::new, MobCategory.CREATURE)

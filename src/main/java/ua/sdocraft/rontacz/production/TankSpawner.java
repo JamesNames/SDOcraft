@@ -27,6 +27,7 @@ public final class TankSpawner {
             case "m1a2" -> ModEntities.M_1A_2.get();
             case "t90a" -> ModEntities.T_90A.get();
             case "mi28" -> ModEntities.MI_28.get();
+            case "sodayo_tow" -> ModEntities.SODAYO_PICK_UP_TOW.get();
             default -> null;
         };
         if (type == null) {
