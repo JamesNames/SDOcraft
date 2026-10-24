@@ -156,3 +156,9 @@ and automatic war in single-player are not yet implemented.
 - Hangar uses real 23x21 industrial building footprint and 9-wide gate; old Blacksmith and Superior Blacksmith structures replaced.
 - **BACKUP WORLD**: hangar footprint changes existing Blacksmith blueprint and may require rebuilding old blacksmiths.
 - Compile validation is not runtime testing: check the new structure in a separate creative world.
+
+## v0.5.2 arched Quonset hangar (replaces flat-roof v0.5.1)
+- Former Blacksmith/Vehicle Hangar now has a true semicircular cross-section, connected curved roof and structural ribs across its full 21-block depth. **No flat roof or rooftop landing H.**
+- Same 23x21 floor footprint. Roof reaches y=11; the gate is 9 blocks wide with a rounded top for high vehicles.
+- The front retains a vehicle entrance; workshop supplies and building functionality remain.
+- **Back up worlds** and rebuild existing Blacksmith/Hangar structures as the blueprint geometry changed. Check RoN preview in creative. Runtime model not yet validated.
