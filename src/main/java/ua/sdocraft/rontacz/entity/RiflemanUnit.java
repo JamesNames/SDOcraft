@@ -17,6 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import ua.sdocraft.rontacz.RonTacZ;
+import ua.sdocraft.rontacz.faction.MilitaryFaction;
 
 public class RiflemanUnit extends PillagerUnit {
     public static final int MAGAZINE = 30;
@@ -83,6 +84,14 @@ public class RiflemanUnit extends PillagerUnit {
     public void tick() {
         super.tick();
         if (level().isClientSide()) return;
+        // RoN also reinitialises units after entity join. Ensure armor exists
+        // after owner assignment and after the next world load.
+        if (!(this instanceof TankCrewUnit) && tickCount % 40 == 0
+             && (getItemBySlot(EquipmentSlot.HEAD).isEmpty()
+                 || getItemBySlot(EquipmentSlot.CHEST).isEmpty())
+             && level() instanceof net.minecraft.server.level.ServerLevel server)
+            MilitaryFaction.applyToUnit(server, this);
+
         ItemStack gun = getMainHandItem();
         if (!(gun.getItem() instanceof IGun iGun)) return;
         IGunOperator operator = IGunOperator.fromLivingEntity(this);

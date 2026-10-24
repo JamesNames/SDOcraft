@@ -13,6 +13,7 @@
   },
   "client": [
     "TankSelectionMixin",
-    "HelicopterCursorMixin"
+    "HelicopterCursorMixin",
+    "SBWInfantryArmorTextureMixin"
   ]
 }

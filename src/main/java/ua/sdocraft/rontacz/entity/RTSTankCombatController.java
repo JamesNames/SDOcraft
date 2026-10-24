@@ -5,6 +5,8 @@ import com.atsuishio.superbwarfare.data.vehicle.subdata.VehicleType;
 import com.atsuishio.superbwarfare.entity.vehicle.base.VehicleEntity;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.ai.targeting.TargetingConditions;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
@@ -28,11 +30,18 @@ public final class RTSTankCombatController {
         if (tank.getHealth() <= 0) return;
 
         LivingEntity target = driver.getTarget();
-        if (target == null || !isEnemy(driver, target)) target = findOpponent(world, driver, tank);
+        if (target == null || !isEnemy(driver, target)) {
+            // Search sparingly. RoN's RTS drivers may not acquire vanilla AI targets.
+            if (world.getGameTime() % 20 == tank.getId() % 20) {
+                target = findOpponent(world, driver, tank);
+                driver.setTarget(target);
+            } else target = null;
+        }
         if (target == null) {
             tank.setAiTurretTargetUUID("undefined");
             return;
         }
+        driver.setTarget(target); // SBW's native Mob driver shooting requires mob.target
         tank.setAiTurretTargetUUID(target.getStringUUID());
 
         // Keep turret trained on the real vehicle bounding box rather than rider head.
@@ -44,6 +53,11 @@ public final class RTSTankCombatController {
         // Training/test mode: refill one genuine SBW AP cannon shell when empty.
         // GunData still applies its own shooting/reload logic and projectile physics.
         if (cannon.ammo.get() <= 0) cannon.ammo.set(1);
+        if (!cannon.canShoot(tank)) {
+            RonTacZ.LOGGER.warn("RTS tank {} cannot fire: ammo={} selectedWeapon={} health={} target={}",
+                tank.getId(), cannon.ammo.get(), tank.getWeaponIndex(0), tank.getHealth(), target.getId());
+            return;
+        }
 
         Entity victim = target.getVehicle() != null ? target.getVehicle() : target;
         Vec3 aim = victim.getBoundingBox().getCenter();
@@ -54,6 +68,7 @@ public final class RTSTankCombatController {
 
     private static boolean isEnemy(TankCrewUnit driver, LivingEntity candidate) {
         if (candidate == driver || !candidate.isAlive()) return false;
+        if (candidate instanceof Monster && !(candidate instanceof RiflemanUnit)) return true;
         if (!(candidate instanceof RiflemanUnit other)) return false;
         String owner=driver.getOwnerName();
         String foe=other.getOwnerName();
@@ -64,13 +79,13 @@ public final class RTSTankCombatController {
     }
 
     private static LivingEntity findOpponent(ServerLevel level, TankCrewUnit driver, VehicleEntity tank) {
-        List<RiflemanUnit> near=level.getEntitiesOfClass(
-            RiflemanUnit.class, new AABB(tank.blockPosition()).inflate(COMBAT_RANGE),
+        List<LivingEntity> near=level.getEntitiesOfClass(
+            LivingEntity.class, new AABB(tank.blockPosition()).inflate(COMBAT_RANGE),
             soldier -> isEnemy(driver,soldier));
         // Engage opposing armor first.
         LivingEntity best=null;
         double bestDistance=COMBAT_RANGE*COMBAT_RANGE;
-        for (RiflemanUnit other:near) {
+        for (LivingEntity other:near) {
             double dist=tank.position().distanceToSqr(other.position());
             if (other.getVehicle() instanceof VehicleEntity && dist<bestDistance) {
                 best=other;
