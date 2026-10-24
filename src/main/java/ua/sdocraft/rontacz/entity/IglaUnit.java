@@ -17,6 +17,6 @@ public final class IglaUnit extends MissileSpecialistUnit {
     @Override protected float engagementRange() { return 125f; }
     @Override protected boolean canEngage(LivingEntity target) {
         return target.isAlive() && target.getVehicle() instanceof VehicleEntity v
-            && (v.getVehicleType() == VehicleType.HELICOPTER || v.getVehicleType() == VehicleType.PLANE);
+            && (v.getVehicleType() == VehicleType.HELICOPTER || v.getVehicleType() == VehicleType.AIRPLANE);
     }
 }
