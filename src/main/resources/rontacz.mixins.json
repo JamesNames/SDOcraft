@@ -6,7 +6,8 @@
   "refmap": "rontacz.refmap.json",
   "mixins": [
     "PillagerTickMixin",
-    "RTSHelicopterPhysicsMixin"
+    "RTSHelicopterPhysicsMixin",
+    "MilitaryBarracksMixin"
   ],
   "injectors": {
     "defaultRequire": 1

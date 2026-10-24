@@ -28,6 +28,10 @@ public abstract class MissileSpecialistUnit extends RiflemanUnit {
     protected abstract int fireInterval();
     protected abstract float engagementRange();
     protected boolean canEngage(LivingEntity target) { return target.isAlive(); }
+    protected boolean canSeeTargetForLaunch(LivingEntity target, net.minecraft.world.entity.Entity actual) {
+        return getSensing().hasLineOfSight(target);
+    }
+    protected void afterMissileLaunch(LivingEntity target, net.minecraft.world.entity.Entity actual) { }
 
     @Override protected float gunRange() { return engagementRange(); }
     @Override protected float shotCooldown() { return fireInterval(); }
@@ -63,7 +67,8 @@ public abstract class MissileSpecialistUnit extends RiflemanUnit {
 
     @Override public void performUnitRangedAttack(LivingEntity target, float velocity) {
         if (level().isClientSide() || target==null || !canEngage(target)) return;
-        if (!getSensing().hasLineOfSight(target)) return;
+        var victim=target.getVehicle() instanceof VehicleEntity veh ? veh : target;
+        if (!canSeeTargetForLaunch(target,victim)) return;
         ItemStack stack=getMainHandItem();
         if (!stack.is(launcher())) return;
         GunData gun=GunData.from(stack);
@@ -71,7 +76,6 @@ public abstract class MissileSpecialistUnit extends RiflemanUnit {
         if (gun.ammo.get() <= 0) gun.ammo.set(1);
 
         // Aim the physical launcher before SBW computes shooter's look direction.
-        var victim=target.getVehicle() instanceof VehicleEntity veh ? veh : target;
         Vec3 aim=victim.getBoundingBox().getCenter();
         Vec3 delta=aim.subtract(getEyePosition());
         float yaw=(float)Math.toDegrees(Math.atan2(-delta.x,delta.z));
@@ -91,6 +95,7 @@ public abstract class MissileSpecialistUnit extends RiflemanUnit {
         // with an entity lock and the clicked target's actual vehicle center.
         gun.shoot(this,0.0,true,victim.getUUID(),aim);
         gun.save();
+        afterMissileLaunch(target,victim);
         RonTacZ.LOGGER.info("RTS {} fired real SBW launcher at entity={}", getName().getString(),victim.getId());
     }
 }

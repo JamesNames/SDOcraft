@@ -141,3 +141,11 @@ and automatic war in single-player are not yet implemented.
 - Production layout avoids overwriting existing Barracks first eight slots or Blacksmith first six slots.
 - The visual model of Barracks remains the original RoN building in v0.4.9. A realistic military barracks is a separate asset/replacement project.
 - Compilation success alone DOES NOT verify behavior, missiles, movement or rendered 3D items; test in creative.
+
+### v0.5.0: militarized RoN Barracks and corrected 9K38 Igla RTS air defense
+- Replaces the vanilla Reign of Nether barracks structure on **both** client and server via a deterministic 15x13 military bunker blueprint with concrete foundation, olive-gray camo roof, defensive sandbags, iron windows, searchlights, supplies and a radio antenna.
+- IMPORTANT: Back up your world before update. New barracks and existing save previews use a different block footprint; buildings created in previous versions may need rebuilding.
+- Igla now tracks the native airborne Superb Warfare vehicle itself (not its hidden RoN pilot) and uses a line-of-sight ray toward aircraft hitbox.
+- Igla launches from RTS target goal even if RoN's vanilla ranged goal cannot see a pilot obscured by the vehicle.
+- Guidance re-applies vehicle UUID briefly to missiles fired by the Igla, without scanning/selecting other friendly targets.
+- This requires real gameplay validation for 9K38 missile pathing and barracks building.
