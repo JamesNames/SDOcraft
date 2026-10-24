@@ -44,7 +44,7 @@ public final class HelicopterFlightController {
         heli.processInput((short)0);
         heli.mouseInput(0, 0);
         heli.setXRot(Mth.approach(heli.getXRot(), 0f, 2.5f));
-        heli.setZRot(Mth.approach(heli.getZRot(), 0f, 2.5f));
+        heli.setZRot(0f);
     }
 
     private static void applyTarget(VehicleEntity heli, Vec3 dest, double maxSpeed) {
