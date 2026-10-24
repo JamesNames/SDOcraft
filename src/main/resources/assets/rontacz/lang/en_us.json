@@ -9,5 +9,7 @@
   "entity.rontacz.rpg_unit": "RPG Infantry",
   "entity.rontacz.igla_unit": "Igla MANPADS",
   "entity.rontacz.javelin_unit": "Javelin ATGM Infantry",
-  "entity.rontacz.sodayo_tow_crew_unit": "Sodayo TOW Driver"
+  "entity.rontacz.sodayo_tow_crew_unit": "Sodayo TOW Driver",
+  "buildings.rontacz.vehicle_hangar": "Military Vehicle Hangar",
+  "buildings.rontacz.vehicle_hangar.tooltip": "Produces tanks, helicopters and ATGM trucks"
 }

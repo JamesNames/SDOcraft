@@ -9,5 +9,7 @@
   "entity.rontacz.rpg_unit": "Гранатомётчик РПГ",
   "entity.rontacz.igla_unit": "Расчёт ПЗРК «Игла»",
   "entity.rontacz.javelin_unit": "Оператор Javelin",
-  "entity.rontacz.sodayo_tow_crew_unit": "Экипаж Sodayo ПТРК"
+  "entity.rontacz.sodayo_tow_crew_unit": "Экипаж Sodayo ПТРК",
+  "buildings.rontacz.vehicle_hangar": "Военный ангар",
+  "buildings.rontacz.vehicle_hangar.tooltip": "Производство танков, вертолётов и машин с ПТРК"
 }

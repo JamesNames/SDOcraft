@@ -8,7 +8,8 @@
     "PillagerTickMixin",
     "RTSHelicopterPhysicsMixin",
     "MilitaryBarracksMixin",
-    "VehicleHangarSpawnMixin"
+    "VehicleHangarSpawnMixin",
+    "VehicleHangarLabelMixin"
   ],
   "injectors": {
     "defaultRequire": 1
