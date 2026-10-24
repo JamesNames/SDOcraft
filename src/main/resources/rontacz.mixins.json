@@ -9,7 +9,8 @@
     "RTSHelicopterPhysicsMixin",
     "MilitaryBarracksMixin",
     "VehicleHangarSpawnMixin",
-    "VehicleHangarLabelMixin"
+    "VehicleHangarLabelMixin",
+    "MilitaryConstructionFallbackMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -18,10 +18,10 @@ public final class TankSpawner {
         spawnVehicle(world, commander, "m1a2");
     }
 
-    public static void spawnVehicle(ServerLevel world, TankCrewUnit commander, String kind) {
+    public static boolean spawnVehicle(ServerLevel world, TankCrewUnit commander, String kind) {
         if (!MilitaryFaction.canRecruit(world, commander.getOwnerName(), kind)) {
             RonTacZ.LOGGER.warn("Faction {} may not recruit {}", commander.getOwnerName(), kind);
-            return;
+            return false;
         }
         EntityType<?> type = switch (kind) {
             case "m1a2" -> ModEntities.M_1A_2.get();
@@ -32,15 +32,19 @@ public final class TankSpawner {
         };
         if (type == null) {
             RonTacZ.LOGGER.error("Unknown SBW RTS vehicle {}", kind);
-            return;
+            return false;
         }
         Entity entity = type.create(world);
         if (!(entity instanceof VehicleEntity vehicle)) {
             RonTacZ.LOGGER.error("Vehicle kind {} could not spawn", kind);
-            return;
+            return false;
         }
 
         BlockPos pos = findPosition(world, commander.blockPosition(), "mi28".equals(kind));
+        if (pos == null) {
+            RonTacZ.LOGGER.error("No clear terrain for {} vehicle spawn near {}", kind,commander.blockPosition());
+            return false;
+        }
         vehicle.moveTo(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5,
             commander.getYRot(), 0);
         vehicle.setEnergy(vehicle.getMaxEnergy());
@@ -57,16 +61,18 @@ public final class TankSpawner {
 
         if (!world.addFreshEntity(vehicle)) {
             RonTacZ.LOGGER.error("Failed adding {} to the world", kind);
-            return;
+            return false;
         }
         MilitaryFaction.applyToVehicle(world, vehicle, commander.getOwnerName(), kind);
         if (!commander.startRiding(vehicle, true)) {
             RonTacZ.LOGGER.error("RTS commander {} could not mount {}", commander.getId(), kind);
-            return;
+            vehicle.discard();
+            return false;
         }
         RonTacZ.LOGGER.info("RTS {} spawned at {} with commander={} owner={} seat={}",
             kind, vehicle.blockPosition(), commander.getId(),
             commander.getOwnerName(), vehicle.getSeatIndex(commander));
+        return true;
     }
 
     private static BlockPos findPosition(ServerLevel world, BlockPos near, boolean helicopter) {
@@ -85,7 +91,7 @@ public final class TankSpawner {
             }
         }
         RonTacZ.LOGGER.warn("No unobstructed RTS vehicle spawn site near {}", near);
-        return world.getHeightmapPos(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,near.offset(22,0,22));
+        return null;
     }
 
     private static boolean isClear(ServerLevel world, BlockPos center,

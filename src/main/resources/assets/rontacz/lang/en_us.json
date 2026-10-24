@@ -11,5 +11,6 @@
   "entity.rontacz.javelin_unit": "Javelin ATGM Infantry",
   "entity.rontacz.sodayo_tow_crew_unit": "Sodayo TOW Driver",
   "buildings.rontacz.vehicle_hangar": "Military Vehicle Hangar",
-  "buildings.rontacz.vehicle_hangar.tooltip": "Produces tanks, helicopters and ATGM trucks"
+  "buildings.rontacz.vehicle_hangar.tooltip": "Produces tanks, helicopters and ATGM trucks",
+  "error.rontacz.production_refunded": "Unit failed to spawn. Production cost refunded. Check space near the building."
 }

@@ -11,5 +11,6 @@
   "entity.rontacz.javelin_unit": "Оператор Javelin",
   "entity.rontacz.sodayo_tow_crew_unit": "Экипаж Sodayo ПТРК",
   "buildings.rontacz.vehicle_hangar": "Военный ангар",
-  "buildings.rontacz.vehicle_hangar.tooltip": "Производство танков, вертолётов и машин с ПТРК"
+  "buildings.rontacz.vehicle_hangar.tooltip": "Производство танков, вертолётов и машин с ПТРК",
+  "error.rontacz.production_refunded": "Юнит не появился. Стоимость производства возвращена. Проверьте свободное место возле здания."
 }

@@ -162,3 +162,10 @@ and automatic war in single-player are not yet implemented.
 - Same 23x21 floor footprint. Roof reaches y=11; the gate is 9 blocks wide with a rounded top for high vehicles.
 - The front retains a vehicle entrance; workshop supplies and building functionality remain.
 - **Back up worlds** and rebuild existing Blacksmith/Hangar structures as the blueprint geometry changed. Check RoN preview in creative. Runtime model not yet validated.
+
+### v0.5.3 — construction and production safety
+- RoN charges for queued units before attempting to spawn them. If an infantry unit or vehicle fails creation, the paid food/wood/ore/emerald are returned with an in-game warning and server log.
+- Train infantry just OUTSIDE the military barracks, avoiding collisions with the new giant foundation and roof. Create vehicle crew at the hangar exit, not trapped inside the building.
+- In case of no flat external vehicle spawn, fail and refund rather than silently generate the machine through the landscape.
+- Newly constructed military barracks and vehicle hangars automatically continue slow construction after 6 seconds if villagers cannot reach the construction perimeter; assigned builders still work normally.
+- Production failures logged under `RTS production failed` and `Refunded failed RTS production`.

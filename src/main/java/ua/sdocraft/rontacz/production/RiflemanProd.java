@@ -31,9 +31,12 @@ public final class RiflemanProd extends ProductionItem implements IUnitProductio
         super(COST);
         this.onComplete = (Level level, ProductionPlacement placement) -> {
             if (!level.isClientSide()) {
-                var unit = placement.produceUnit((ServerLevel) level, ModEntities.RIFLEMAN.get(), placement.ownerName, true);
+                ServerLevel server=(ServerLevel)level;
+                var unit=ProductionFailureRefund.spawn(placement,server,ModEntities.RIFLEMAN.get(),ITEM_NAME);
                 if (unit instanceof RiflemanUnit soldier)
-                    MilitaryFaction.applyToUnit((ServerLevel) level, soldier);
+                    MilitaryFaction.applyToUnit(server,soldier);
+                else
+                    ProductionFailureRefund.refund(placement,server,getCost(false,placement.ownerName),ITEM_NAME);
             }
         };
     }

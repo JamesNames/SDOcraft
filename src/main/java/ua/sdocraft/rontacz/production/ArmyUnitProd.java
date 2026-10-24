@@ -47,11 +47,20 @@ public final class ArmyUnitProd extends ProductionItem implements IUnitProductio
             @SuppressWarnings("unchecked")
             EntityType<? extends com.solegendary.reignofnether.unit.interfaces.Unit> type =
                 (EntityType<? extends com.solegendary.reignofnether.unit.interfaces.Unit>)(Object)this.entityType.get();
-            var unit=placement.produceUnit(server,type,placement.ownerName,true);
-            if (unit instanceof RiflemanUnit soldier)
-                MilitaryFaction.applyToUnit(server, soldier);
-            if (vehicleId != null && unit instanceof TankCrewUnit crew)
-                TankSpawner.spawnVehicle(server, crew, vehicleId);
+            var unit=ProductionFailureRefund.spawn(placement,server,type,display);
+            if (!(unit instanceof RiflemanUnit soldier)) {
+                ProductionFailureRefund.refund(placement,server,getCost(false,placement.ownerName),display);
+                return;
+            }
+            if (vehicleId != null) {
+                if (!(soldier instanceof TankCrewUnit crew)
+                    || !TankSpawner.spawnVehicle(server,crew,vehicleId)) {
+                    soldier.discard();
+                    ProductionFailureRefund.refund(placement,server,getCost(false,placement.ownerName),display);
+                    return;
+                }
+            }
+            MilitaryFaction.applyToUnit(server,soldier);
         };
     }
     @Override public boolean canProduce(ProductionPlacement placement) {
