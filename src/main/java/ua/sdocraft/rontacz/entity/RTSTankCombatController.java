@@ -22,10 +22,7 @@ public final class RTSTankCombatController {
     public static void tick(TankCrewUnit driver) {
         if (!(driver.level() instanceof ServerLevel world) || !driver.isAlive()) return;
         if (!(driver.getVehicle() instanceof VehicleEntity tank)) return;
-        if (tank.getVehicleType() != VehicleType.TANK && tank.getVehicleType() != VehicleType.APC
-            && tank.getVehicleType() != VehicleType.OTHER) {
-            // Only M1A2 / T-90A are actually used below; avoid aircraft and other machinery.
-        }
+        if (tank.getVehicleType() != VehicleType.TANK) return;
         if (!(driver.getClass() == TankCrewUnit.class || driver instanceof T90CrewUnit)
             || tank.isWreck() || tank.getFirstPassenger() != driver) return;
         if (tank.getHealth() <= 0) return;
