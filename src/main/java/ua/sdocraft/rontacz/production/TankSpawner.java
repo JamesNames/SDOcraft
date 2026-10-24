@@ -73,18 +73,19 @@ public final class TankSpawner {
         int xClearance = helicopter ? 5 : 3;
         int zClearance = helicopter ? 5 : 4;
         int height = helicopter ? 7 : 4;
-        for (int radius = 8; radius <= 24; radius += 4) {
+        for (int radius = 14; radius <= 38; radius += 4) {
             for (int i = 0; i < 12; i++) {
                 double angle = i * Math.PI / 6;
                 BlockPos p = near.offset(
                     (int) Math.round(radius * Math.cos(angle)), 0,
                     (int) Math.round(radius * Math.sin(angle)));
+                p=world.getHeightmapPos(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,p);
                 if (isClear(world, p, xClearance, zClearance, height))
                     return p;
             }
         }
         RonTacZ.LOGGER.warn("No unobstructed RTS vehicle spawn site near {}", near);
-        return near.offset(10, 2, 10);
+        return world.getHeightmapPos(net.minecraft.world.level.levelgen.Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,near.offset(22,0,22));
     }
 
     private static boolean isClear(ServerLevel world, BlockPos center,

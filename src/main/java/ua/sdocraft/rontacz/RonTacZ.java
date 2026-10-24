@@ -57,21 +57,9 @@ public final class RonTacZ {
             var machineGunner=Registry.register(ReignOfNetherRegistries.PRODUCTION_ITEM,
                 new ResourceLocation(MOD_ID,"machine_gunner"),
                 new ArmyUnitProd("Machine Gunner [M249]",ModEntities.MACHINE_GUNNER::get,false));
-            var tank=Registry.register(ReignOfNetherRegistries.PRODUCTION_ITEM,
-                new ResourceLocation(MOD_ID,"m1a2"),
-                new ArmyUnitProd("M1A2 Abrams",ModEntities.TANK_CREW::get,true));
+            // Only foot soldiers are trained in Barracks.
             Buildings.BARRACKS.productions.add(sniper, Keybindings.abilitySlot4);
             Buildings.BARRACKS.productions.add(machineGunner, Keybindings.abilitySlot5);
-            Buildings.BARRACKS.productions.add(tank, Keybindings.abilitySlot6);
-            var t90=Registry.register(ReignOfNetherRegistries.PRODUCTION_ITEM,
-                new ResourceLocation(MOD_ID, "t90a"),
-                new ArmyUnitProd("T-90A", ModEntities.T90_CREW::get, "t90a"));
-            var mi28=Registry.register(ReignOfNetherRegistries.PRODUCTION_ITEM,
-                new ResourceLocation(MOD_ID, "mi28"),
-                new ArmyUnitProd("Mi-28 Helicopter", ModEntities.MI28_CREW::get, "mi28"));
-            Buildings.BARRACKS.productions.add(t90, Keybindings.abilitySlot7);
-            Buildings.BARRACKS.productions.add(mi28, Keybindings.abilitySlot8);
-
             var rpg=Registry.register(ReignOfNetherRegistries.PRODUCTION_ITEM,
                 new ResourceLocation(MOD_ID,"rpg_infantry"),
                 new ArmyUnitProd("AT Infantry [RPG]",ModEntities.RPG_UNIT::get,false));
@@ -81,15 +69,29 @@ public final class RonTacZ {
             var javelin=Registry.register(ReignOfNetherRegistries.PRODUCTION_ITEM,
                 new ResourceLocation(MOD_ID,"javelin_infantry"),
                 new ArmyUnitProd("ATGM [Javelin]",ModEntities.JAVELIN_UNIT::get,false));
+            Buildings.BARRACKS.productions.add(rpg,Keybindings.abilitySlot6);
+            Buildings.BARRACKS.productions.add(igla,Keybindings.abilitySlot7);
+            Buildings.BARRACKS.productions.add(javelin,Keybindings.abilitySlot8);
+
+            // Blacksmith becomes a large military hangar; existing research
+            // and equip abilities on slots 1-6 remain unchanged.
+            var tank=Registry.register(ReignOfNetherRegistries.PRODUCTION_ITEM,
+                new ResourceLocation(MOD_ID,"m1a2"),
+                new ArmyUnitProd("M1A2 Abrams",ModEntities.TANK_CREW::get,true));
+            var t90=Registry.register(ReignOfNetherRegistries.PRODUCTION_ITEM,
+                new ResourceLocation(MOD_ID,"t90a"),
+                new ArmyUnitProd("T-90A",ModEntities.T90_CREW::get,"t90a"));
+            var mi28=Registry.register(ReignOfNetherRegistries.PRODUCTION_ITEM,
+                new ResourceLocation(MOD_ID,"mi28"),
+                new ArmyUnitProd("Mi-28 Helicopter",ModEntities.MI28_CREW::get,"mi28"));
             var sodayo=Registry.register(ReignOfNetherRegistries.PRODUCTION_ITEM,
                 new ResourceLocation(MOD_ID,"sodayo_tow"),
                 new ArmyUnitProd("Sodayo TOW ATGM",ModEntities.SODAYO_TOW_CREW::get,"sodayo_tow"));
-            Buildings.BARRACKS.productions.add(rpg,Keybindings.abilitySlot9);
-            Buildings.BARRACKS.productions.add(igla,Keybindings.abilitySlot10);
-            // A temporary military workshop, with no conflicts with Blacksmith slots 1-6.
-            Buildings.BLACKSMITH.productions.add(javelin,Keybindings.abilitySlot7);
-            Buildings.BLACKSMITH.productions.add(sodayo,Keybindings.abilitySlot8);
-            LOGGER.info("RoN x TaCZ x SBW: RPG, Igla, Javelin, Sodayo TOW and existing units registered");
+            Buildings.BLACKSMITH.productions.add(tank,Keybindings.abilitySlot7);
+            Buildings.BLACKSMITH.productions.add(t90,Keybindings.abilitySlot8);
+            Buildings.BLACKSMITH.productions.add(mi28,Keybindings.abilitySlot9);
+            Buildings.BLACKSMITH.productions.add(sodayo,Keybindings.abilitySlot10);
+            LOGGER.info("RoN x TaCZ x SBW: Barracks infantry only; Blacksmith = armored vehicle hangar");
         });
     }
 }

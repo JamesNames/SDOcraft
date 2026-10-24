@@ -149,3 +149,10 @@ and automatic war in single-player are not yet implemented.
 - Igla launches from RTS target goal even if RoN's vanilla ranged goal cannot see a pilot obscured by the vehicle.
 - Guidance re-applies vehicle UUID briefly to missiles fired by the Igla, without scanning/selecting other friendly targets.
 - This requires real gameplay validation for 9K38 missile pathing and barracks building.
+
+## v0.5.1 Hangar for all vehicles and barracks for all infantry
+- Military Barracks hotkeys 3-8: TaCZ AK47, AWM, M249, RPG, Igla, Javelin.
+- Blacksmith / vehicle hangar: original research 1-4 retained; vehicle hotkeys 7-10: M1A2, T-90A, Mi-28, Sodayo TOW.
+- Hangar uses real 23x21 industrial building footprint and 9-wide gate; old Blacksmith and Superior Blacksmith structures replaced.
+- **BACKUP WORLD**: hangar footprint changes existing Blacksmith blueprint and may require rebuilding old blacksmiths.
+- Compile validation is not runtime testing: check the new structure in a separate creative world.

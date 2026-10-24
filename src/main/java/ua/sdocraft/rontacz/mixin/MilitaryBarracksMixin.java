@@ -8,6 +8,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import ua.sdocraft.rontacz.building.MilitaryBarracksStructure;
+import ua.sdocraft.rontacz.building.VehicleHangarStructure;
 
 import java.util.ArrayList;
 
@@ -18,7 +19,8 @@ public abstract class MilitaryBarracksMixin {
         at=@At("HEAD"),cancellable=true,remap=false)
     private static void rontacz$militaryBase(String structureName, LevelAccessor world,
                                              CallbackInfoReturnable<ArrayList<BuildingBlock>> cir) {
-        if ("barracks".equals(structureName))
-            cir.setReturnValue(MilitaryBarracksStructure.create());
+        if ("barracks".equals(structureName)) cir.setReturnValue(MilitaryBarracksStructure.create());
+        if ("blacksmith".equals(structureName)) cir.setReturnValue(VehicleHangarStructure.create(false));
+        if ("blacksmith_superior".equals(structureName)) cir.setReturnValue(VehicleHangarStructure.create(true));
     }
 }
