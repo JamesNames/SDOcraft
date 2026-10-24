@@ -93,7 +93,7 @@ public final class RTSTankCombatController {
             }
         }
         if (best!=null) return best;
-        for (RiflemanUnit other:near) {
+        for (LivingEntity other:near) {
             double dist=tank.position().distanceToSqr(other.position());
             if (dist<bestDistance) {best=other;bestDistance=dist;}
         }
