@@ -23,4 +23,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: rontacz-vnr-vfsm-v0.4-jar
-          path: build/libs/rontacz-riflemen-0.4.7.jar
+          path: build/libs/rontacz-riflemen-0.4.8.jar

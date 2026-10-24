@@ -1,4 +1,4 @@
-# RoN x TaCZ x Superb Warfare v0.4.7
+# RoN x TaCZ x Superb Warfare v0.4.8
 Minecraft Forge 1.20.1
 Required mods: Reign of Nether 1.5.0b, TaCZ 1.1.8-hotfix2, Superb Warfare **0.8.9.2** (file 9019882), Kotlin for Forge 4.12.0.
 
@@ -41,7 +41,7 @@ Install resulting JAR on both client/server alongside dependencies.
 - Airborne routing, landing, terrain avoidance, missile targeting, combat and safe rotor behavior are **not proven in live gameplay**. Spawn on open flat ground; test in creative.
 - Both currently trained at Barracks using pillager cost; separate factories/helipad and balance later.
 
-## VNR vs VFSM v0.4.7 — two opposing military sides (first playable integration)
+## VNR vs VFSM v0.4.8 — two opposing military sides (first playable integration)
 Choose a side as a Reign of Nether **Villagers** RTS player:
 ```
 /rontacz faction vnr
@@ -61,14 +61,14 @@ Both players still choose the Villagers base faction and assign a military side 
 Faction buildings, rank-specific combat stats, faction AI bots, own colored 3D skins,
 and automatic war in single-player are not yet implemented.
 
-### v0.4.7 Mi-28 stability and selection
+### v0.4.8 Mi-28 stability and selection
 - Fixed unlimited rotor thrust / unbounded climb: RTS flight drives a capped, collision-aware step every server tick with gravity disabled while an RTS pilot is mounted.
 - Pilot selection by a ray hit on the aircraft beyond RoN's 30-block ground cursor radius.
 - Hover target uses previous hold position; new move command resets hold anchor.
 - On dismount Mi-28 restores gravity.
 - Important: this is controlled arcade flight, NOT the physical Superb Warfare flight model. Rotor animation may be limited; collision routing, missile autoattack, safe landing remain unsupported.
 
-### v0.4.7 Mi-28 waypoint altitude fixes
+### v0.4.8 Mi-28 waypoint altitude fixes
 - Visual test 2026-10-24: pilot selection works, and Mi-28 reaches waypoint horizontally but descends near tanks.
 - Bug: old waypoint completion checked only X/Z and stopped climb prematurely.
 - New arrival requires both X/Z within 4 blocks and altitude within 2.5 blocks.
@@ -77,14 +77,14 @@ and automatic war in single-player are not yet implemented.
 - Hold anchor remains at reached safe height.
 - This still needs in-game testing with video/logs.
 
-### v0.4.7 Mi-28 stable single-controller flight
+### v0.4.8 Mi-28 stable single-controller flight
 - Corrected root cause of ceiling-hitting and jerky flying: SBW native rotor travel and RTS position movement both affected helicopter concurrently.
 - Cancel native VehicleEntity.travel() **only while** our Mi28CrewUnit occupies helicopter pilot seat; keep model, weapons, rotor animation and rendering.
 - Smooth, acceleration-limited RTS travel with collision-aware movement, altitude cap, and slow-to-stop behavior.
 - Vertical ascent first, horizontal move second, and stable waypoint hover after arrival.
 - Tested: Gradle build only; physics still requires in-game verification.
 
-### v0.4.7 Superb Warfare infantry armor
+### v0.4.8 Superb Warfare infantry armor
 - All TaCZ riflemen, machine gunners, snipers are automatically equipped with Superb Warfare 3D armor.
 - VNR rebels: Russian 6B47 helmet, 6B43 chest; bronze leather trousers/boots.
 - VFSM regular army: US PASGT helmet, IOTV chest; cyan leather trousers/boots.
@@ -95,7 +95,7 @@ and automatic war in single-player are not yet implemented.
 - Already recruited infantry: use `/rontacz faction vnr` or `/rontacz faction vfsm` again to refresh their equipped gear.
 - The armor textures are the original Superb Warfare texture colors, not dynamically dyed bronze/cyan.
 
-### v0.4.7 Tank combat / survivability fix
+### v0.4.8 Tank combat / survivability fix
 - Tanks have 500 HP in Superb Warfare. They are naturally immune to small arms and melee by the original damage modifier JSON.
 - Previous releases only aimed tank turrets. M1A2/T-90A now call native Superb Warfare `vehicleShoot` for real cannon shells at hostile military units, prioritizing armor, every ~6 seconds.
 - RTS faction scoreboard's `allowFriendlyFire=true` ensures scoreboards alone cannot veto ALL damage. This also permits manually damaging your own side, so use care.
@@ -104,14 +104,14 @@ and automatic war in single-player are not yet implemented.
 - Flight v0.4.3 single-controller Mi-28 remains included; **gameplay confirmation is still required**.
 - Test by having two different RTS players choose different sides and command tank attacks.
 
-## v0.4.7 repair — no T-90 faction/spawn changes
+## v0.4.8 repair — no T-90 faction/spawn changes
 - Mi-28 jumps: SBW baseTick has a second gravity+move step besides its travel() method; cancel this native step only while our RTS pilot is seated.
 - Armor missing: supply Superb Warfare's actual 3D model textures to RoN custom armor renderer; re-equip after join if armor slots remain empty.
 - Tanks not shooting: set server driver Mob.target as required by native SBW AI; acquire enemy RTS soldiers or nearby vanilla monsters, and log ammo/weapon gating.
 - v0.4.5 fuel/damage rules retained; T-90A faction restriction remains VNR-only.
 - Gameplay tests still required. Do not install together with older addon JAR.
 
-### v0.4.7 strict player-targeted vehicle combat
+### v0.4.8 strict player-targeted vehicle combat
 - Removed autonomous enemy search; no firing without a forced RoN ATTACK order.
 - Targets from `driver.getTargetGoal().getTarget()` only when `forced` true.
 - Rejects friendly ownership, shared team, creative players, and friendly splash/line-of-fire.
@@ -120,3 +120,11 @@ and automatic war in single-player are not yet implemented.
 - Mi-28 moves yaw toward clicked target and fires real SBW rockets when aligned.
 - Never modify target in TankCrewUnit.tick. T-90 recruitment unchanged.
 - Gameplay testing still required (especially SBW rocket physics); **do not use v0.4.6 near friendly soldiers**.
+
+### v0.4.8 forced attack on ANY chosen unit + infinite ammo
+- Direct RTS attack commands (A + left-click) can deliberately target **any** other entity, regardless of team; RTS combat never searches arbitrary enemies.
+- Tanks can target other M1A2 and T-90A by aiming at the mounted entity's parent vehicle.
+- Mi-28 now pitches downward at ground targets and aligns the real Rocket firing vector instead of rejecting nearly all high-altitude shots.
+- Infinite native ammunition: install actual Superb Warfare Creative Ammo Box inside each RTS tank/heli inventory, refill all its magazine weapons periodically.
+- Friendly fire **is allowed when ordered** and collateral blast damage may occur. Always test in a separate world.
+- Flight and live combat still need in-game verification.

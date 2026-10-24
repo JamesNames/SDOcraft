@@ -1,6 +1,9 @@
 package ua.sdocraft.rontacz.entity;
 
 import com.atsuishio.superbwarfare.data.gun.GunData;
+import com.atsuishio.superbwarfare.init.ModItems;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.util.Mth;
 import com.atsuishio.superbwarfare.data.vehicle.subdata.VehicleType;
 import com.atsuishio.superbwarfare.entity.vehicle.base.VehicleEntity;
 import net.minecraft.server.level.ServerLevel;
@@ -22,7 +25,7 @@ import ua.sdocraft.rontacz.faction.MilitaryFaction;
 public final class RTSTankCombatController {
     private RTSTankCombatController() {}
 
-    private static final double MAX_RANGE = 110.0;
+    private static final double MAX_RANGE = 180.0;
     private static final int TANK_RELOAD_TICKS = 110;
     private static final int HELI_ROCKET_TICKS = 45;
 
@@ -32,12 +35,14 @@ public final class RTSTankCombatController {
         if (vehicle.isWreck() || vehicle.getHealth() <= 0
             || vehicle.getFirstPassenger() != driver) return;
 
+        InfiniteVehicleAmmo.tick(vehicle, world.getGameTime());
+
         // If a player gave a MOVE / STOP command, the forced target is cleared
         // by Reign of Nether. No shooting, no scanning, no fallback enemies.
         var selected = driver.getTargetGoal();
         LivingEntity target = selected != null && selected.forced
             ? selected.getTarget() : null;
-        if (target == null || !isSafeEnemy(driver, target)) {
+        if (target == null || !isExplicitTargetValid(driver, target)) {
             vehicle.setAiTurretTargetUUID("undefined");
             // Suppress residual vanilla targeting and SBW native auto-fire.
             if (driver.getTarget() != null) driver.setTarget(null);
@@ -78,9 +83,11 @@ public final class RTSTankCombatController {
         // The Mi-28 pilot has Rocket / DriverMissile, not the gunner's Cannon.
         // Level flight remains controlled by HelicopterFlightController.
         Vec3 diff=aim.subtract(heli.position());
-        if (diff.horizontalDistanceSqr() > 1.0) {
+        if (diff.lengthSqr() > 1.0) {
             float yaw=(float)Math.toDegrees(Math.atan2(-diff.x,diff.z));
-            heli.setYRot(net.minecraft.util.Mth.approachDegrees(heli.getYRot(),yaw,4.0f));
+            float pitch=(float)Math.toDegrees(Math.atan2(-diff.y, Math.hypot(diff.x,diff.z)));
+            heli.setYRot(Mth.approachDegrees(heli.getYRot(),yaw,6.0f));
+            heli.setXRot(Mth.approach(heli.getXRot(),Mth.clamp(pitch,-45f,55f),4.0f));
         }
     }
 
@@ -95,11 +102,12 @@ public final class RTSTankCombatController {
         Vec3 desired=aim.subtract(muzzle).normalize();
         Vec3 barrel=vehicle.getBarrelVector(1f).normalize();
         if (desired.dot(barrel) < 0.978) return; // within ~12 degrees
-        if (!clearFriendlyLine(world,driver,vehicle,muzzle,aim,8)) return;
+        // The player explicitly ordered this target: friendly units may be targeted.
+        // Never pick alternative targets automatically.
 
         // Sandbox prototype: one real SBW round. The native gun decides if
         // reload/heat prevents firing and creates the genuine projectile.
-        if (gun.ammo.get() <= 0) gun.ammo.set(1);
+        // Real cannon rounds are supplied by InfiniteVehicleAmmo.
         if (!gun.canShoot(vehicle)) {
             RonTacZ.LOGGER.warn("RTS tank {}: cannon not ready; ammo={} victim={}",
                 vehicle.getId(),gun.ammo.get(),victim.getId());
@@ -120,10 +128,17 @@ public final class RTSTankCombatController {
         }
         Vec3 launch=heli.getShootPos("Rocket",1f);
         Vec3 desired=aim.subtract(launch).normalize();
-        Vec3 forward=heli.getLookAngle().normalize();
-        if (desired.dot(forward) < 0.955) return; // do not fire sideways
-        if (!clearFriendlyLine(world,driver,heli,launch,aim,10)) return;
-        if (rockets.ammo.get() <= 0) rockets.ammo.set(1);
+        Vec3 actualRocketDirection=heli.getShootVec("Rocket",1f).normalize();
+        // High-altitude shots require a downward pitch. Align the actual SBW rocket
+        // direction rather than checking a level helicopter's forward direction.
+        if (desired.dot(actualRocketDirection) < 0.80) {
+            if (world.getGameTime() % 40 == 0)
+                RonTacZ.LOGGER.info("Mi-28 aiming: vehicle={} alignment={} pitch={} yaw={}",
+                    heli.getId(), desired.dot(actualRocketDirection), heli.getXRot(), heli.getYRot());
+            return;
+        }
+        // Explicit orders may attack either side; do not block on faction.
+        // Rocket magazine and native ammo box are replenished by InfiniteVehicleAmmo.
         if (!rockets.canShoot(heli)) {
             RonTacZ.LOGGER.warn("Mi-28 {} rockets not ready ammo={} target={}",
                 heli.getId(),rockets.ammo.get(),victim.getId());
@@ -168,9 +183,13 @@ public final class RTSTankCombatController {
         return false;
     }
 
-    private static boolean isSafeEnemy(TankCrewUnit shooter, LivingEntity other) {
-        if(other==shooter || !other.isAlive() || isFriendly(shooter,other))return false;
-        if(other instanceof Player player) return !player.isCreative() && !player.isSpectator();
+    /** Explicit A+click overrides team ownership but never allows self-targeting. */
+    private static boolean isExplicitTargetValid(TankCrewUnit shooter, LivingEntity target) {
+        if (target == shooter || !target.isAlive()) return false;
+        Entity mounted=target.getVehicle();
+        if (mounted == shooter.getVehicle()) return false;
+        if (target instanceof Player player)
+            return !player.isCreative() && !player.isSpectator();
         return true;
     }
 }
