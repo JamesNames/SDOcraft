@@ -6,6 +6,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.phys.Vec3;
+import com.atsuishio.superbwarfare.data.vehicle.subdata.VehicleType;
 import ua.sdocraft.rontacz.RonTacZ;
 
 import javax.annotation.Nullable;
@@ -88,7 +89,9 @@ public final class TankMoveGoal extends MoveToTargetBlockGoal {
         if (lastDriveTick == worldTick) return;
         lastDriveTick = worldTick;
         if (moveTarget == null) {
-            tank.processInput((short) 0);
+            if (tank.getVehicleType() == VehicleType.HELICOPTER && !tank.onGround())
+                HelicopterFlightController.hold(tank);
+            else tank.processInput((short) 0);
             previousTankPosition = tank.position();
             noProgressTicks = 0;
             return;
@@ -99,6 +102,19 @@ public final class TankMoveGoal extends MoveToTargetBlockGoal {
         }
         if (tank.isWreck()) {
             tank.processInput((short) 0);
+            return;
+        }
+
+        // Helicopters use native rotor thrust, mouse yaw and pitch, not tank
+        // grousers. The same selectable RTS crew delivers the destination.
+        if (tank.getVehicleType() == VehicleType.HELICOPTER) {
+            HelicopterFlightController.flyTo(tank, moveTarget, worldTick);
+            double hx = tank.getX() - (moveTarget.getX() + 0.5);
+            double hz = tank.getZ() - (moveTarget.getZ() + 0.5);
+            if (hx * hx + hz * hz <= 36.0 && !tank.onGround()) {
+                stopMoving();
+                HelicopterFlightController.hold(tank);
+            }
             return;
         }
 

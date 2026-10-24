@@ -34,6 +34,8 @@ public final class RonTacZ {
         event.put(ModEntities.SNIPER.get(), RiflemanUnit.createAttributes().build());
         event.put(ModEntities.MACHINE_GUNNER.get(), RiflemanUnit.createAttributes().build());
         event.put(ModEntities.TANK_CREW.get(), RiflemanUnit.createAttributes().build());
+        event.put(ModEntities.T90_CREW.get(), RiflemanUnit.createAttributes().build());
+        event.put(ModEntities.MI28_CREW.get(), RiflemanUnit.createAttributes().build());
     }
     private static void commonSetup(FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
@@ -57,7 +59,15 @@ public final class RonTacZ {
             Buildings.BARRACKS.productions.add(sniper, Keybindings.abilitySlot4);
             Buildings.BARRACKS.productions.add(machineGunner, Keybindings.abilitySlot5);
             Buildings.BARRACKS.productions.add(tank, Keybindings.abilitySlot6);
-            LOGGER.info("RoN x TaCZ x SBW: rifleman, sniper, MG, M1A2 registered");
+            var t90=Registry.register(ReignOfNetherRegistries.PRODUCTION_ITEM,
+                new ResourceLocation(MOD_ID, "t90a"),
+                new ArmyUnitProd("T-90A", ModEntities.T90_CREW::get, "t90a"));
+            var mi28=Registry.register(ReignOfNetherRegistries.PRODUCTION_ITEM,
+                new ResourceLocation(MOD_ID, "mi28"),
+                new ArmyUnitProd("Mi-28 Helicopter", ModEntities.MI28_CREW::get, "mi28"));
+            Buildings.BARRACKS.productions.add(t90, Keybindings.abilitySlot7);
+            Buildings.BARRACKS.productions.add(mi28, Keybindings.abilitySlot8);
+            LOGGER.info("RoN x TaCZ x SBW: rifleman, sniper, MG, M1A2, T-90A and Mi-28 registered");
         });
     }
 }

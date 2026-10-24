@@ -25,16 +25,20 @@ import java.util.function.Supplier;
 
 public final class ArmyUnitProd extends ProductionItem implements IUnitProductionItem {
     private final String display;
-    private final boolean tank;
+    private final String vehicleId;
     private final Supplier<? extends EntityType<?>> entityType;
     private static final ResourceLocation ICON =
         new ResourceLocation("reignofnether","textures/mobheads/pillager.png");
 
     public ArmyUnitProd(String display, Supplier<? extends EntityType<?>> entityType, boolean tank) {
+        this(display, entityType, tank ? "m1a2" : null);
+    }
+
+    public ArmyUnitProd(String display, Supplier<? extends EntityType<?>> entityType, String vehicleId) {
         super(ResourceCosts.PILLAGER);
         this.display=display;
         this.entityType=entityType;
-        this.tank=tank;
+        this.vehicleId=vehicleId;
         this.onComplete=(Level world,ProductionPlacement placement)->{
             if (world.isClientSide()) return;
             ServerLevel server=(ServerLevel)world;
@@ -42,7 +46,7 @@ public final class ArmyUnitProd extends ProductionItem implements IUnitProductio
             EntityType<? extends com.solegendary.reignofnether.unit.interfaces.Unit> type =
                 (EntityType<? extends com.solegendary.reignofnether.unit.interfaces.Unit>)(Object)this.entityType.get();
             var unit=placement.produceUnit(server,type,placement.ownerName,true);
-            if (tank && unit instanceof TankCrewUnit crew) TankSpawner.spawnTank(server,crew);
+            if (vehicleId != null && unit instanceof TankCrewUnit crew) TankSpawner.spawnVehicle(server, crew, vehicleId);
         };
     }
     @Override public String getItemName() {return display;}
@@ -55,7 +59,7 @@ public final class ArmyUnitProd extends ProductionItem implements IUnitProductio
            ResourceCosts.getFormattedCost(ResourceCosts.PILLAGER),
            ResourceCosts.getFormattedPopAndTime(ResourceCosts.PILLAGER),
            FormattedCharSequence.EMPTY,
-           Component.literal(tank?"M1A2 Abrams with RTS crew":"TaCZ gun combat unit").getVisualOrderText()
+           Component.literal(vehicleId != null ? "Superb Warfare RTS vehicle: " + vehicleId : "TaCZ gun combat unit").getVisualOrderText()
         ));
         return new StartProductionButton(display,ICON,hotkey,()->false,()->true,tooltip,this);
     }

@@ -18,6 +18,14 @@ public final class ModEntities {
         "machine_gunner_unit", () -> EntityType.Builder
             .of(MachineGunnerUnit::new, MobCategory.CREATURE)
             .sized(0.6f, 1.95f).clientTrackingRange(100).build("rontacz:machine_gunner_unit"));
+    public static final RegistryObject<EntityType<T90CrewUnit>> T90_CREW = ENTITIES.register(
+        "t90_crew_unit", () -> EntityType.Builder
+            .of(T90CrewUnit::new, MobCategory.CREATURE)
+            .sized(0.6f, 1.95f).clientTrackingRange(100).build("rontacz:t90_crew_unit"));
+    public static final RegistryObject<EntityType<Mi28CrewUnit>> MI28_CREW = ENTITIES.register(
+        "mi28_crew_unit", () -> EntityType.Builder
+            .of(Mi28CrewUnit::new, MobCategory.CREATURE)
+            .sized(0.6f, 1.95f).clientTrackingRange(100).build("rontacz:mi28_crew_unit"));
     public static final RegistryObject<EntityType<TankCrewUnit>> TANK_CREW = ENTITIES.register(
         "tank_crew_unit", () -> EntityType.Builder
             .of(TankCrewUnit::new, MobCategory.CREATURE)

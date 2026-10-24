@@ -9,8 +9,9 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.monster.Pillager;
 import net.minecraft.world.level.Level;
+import com.atsuishio.superbwarfare.data.vehicle.subdata.VehicleType;
 
-public final class TankCrewUnit extends RiflemanUnit {
+public class TankCrewUnit extends RiflemanUnit {
     private TankMoveGoal tankMoveGoal;
 
     public TankCrewUnit(EntityType<? extends Pillager> type, Level level) { super(type,level); }
@@ -43,8 +44,8 @@ public final class TankCrewUnit extends RiflemanUnit {
         if (level().isClientSide()) return;
         if (!(getVehicle() instanceof VehicleEntity tank)) return;
         if (tank.getFirstPassenger() != this || tank.isRemoved()) return;
-        if (!tank.getEngineStart()) tank.setEngineStart(true);
-        if (!tank.getEngineStartOver()) tank.setEngineStartOver(true);
+        if (tank.getVehicleType() != VehicleType.HELICOPTER && !tank.getEngineStart()) tank.setEngineStart(true);
+        if (tank.getVehicleType() != VehicleType.HELICOPTER && !tank.getEngineStartOver()) tank.setEngineStartOver(true);
         if (tickCount % 100 == 0) tank.setEnergy(tank.getMaxEnergy());
         // Driving is handled once per server level tick by TankServerEvents.
         LivingEntity target=getTarget();

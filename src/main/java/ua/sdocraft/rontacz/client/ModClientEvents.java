@@ -17,5 +17,7 @@ public final class ModClientEvents {
         event.registerEntityRenderer(ModEntities.SNIPER.get(), ctx -> (EntityRenderer) new PillagerUnitRenderer(ctx));
         event.registerEntityRenderer(ModEntities.MACHINE_GUNNER.get(), ctx -> (EntityRenderer) new PillagerUnitRenderer(ctx));
         event.registerEntityRenderer(ModEntities.TANK_CREW.get(), ctx -> (EntityRenderer) new PillagerUnitRenderer(ctx));
+        event.registerEntityRenderer(ModEntities.T90_CREW.get(), ctx -> (EntityRenderer) new PillagerUnitRenderer(ctx));
+        event.registerEntityRenderer(ModEntities.MI28_CREW.get(), ctx -> (EntityRenderer) new PillagerUnitRenderer(ctx));
     }
 }
