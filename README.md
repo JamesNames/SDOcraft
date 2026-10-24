@@ -1,4 +1,4 @@
-# RoN x TaCZ x Superb Warfare v0.4.1
+# RoN x TaCZ x Superb Warfare v0.4.2
 Minecraft Forge 1.20.1
 Required mods: Reign of Nether 1.5.0b, TaCZ 1.1.8-hotfix2, Superb Warfare **0.8.9.2** (file 9019882), Kotlin for Forge 4.12.0.
 
@@ -41,7 +41,7 @@ Install resulting JAR on both client/server alongside dependencies.
 - Airborne routing, landing, terrain avoidance, missile targeting, combat and safe rotor behavior are **not proven in live gameplay**. Spawn on open flat ground; test in creative.
 - Both currently trained at Barracks using pillager cost; separate factories/helipad and balance later.
 
-## VNR vs VFSM v0.4.1 — two opposing military sides (first playable integration)
+## VNR vs VFSM v0.4.2 — two opposing military sides (first playable integration)
 Choose a side as a Reign of Nether **Villagers** RTS player:
 ```
 /rontacz faction vnr
@@ -61,9 +61,18 @@ Both players still choose the Villagers base faction and assign a military side 
 Faction buildings, rank-specific combat stats, faction AI bots, own colored 3D skins,
 and automatic war in single-player are not yet implemented.
 
-### v0.4.1 Mi-28 stability and selection
+### v0.4.2 Mi-28 stability and selection
 - Fixed unlimited rotor thrust / unbounded climb: RTS flight drives a capped, collision-aware step every server tick with gravity disabled while an RTS pilot is mounted.
 - Pilot selection by a ray hit on the aircraft beyond RoN's 30-block ground cursor radius.
 - Hover target uses previous hold position; new move command resets hold anchor.
 - On dismount Mi-28 restores gravity.
 - Important: this is controlled arcade flight, NOT the physical Superb Warfare flight model. Rotor animation may be limited; collision routing, missile autoattack, safe landing remain unsupported.
+
+### v0.4.2 Mi-28 waypoint altitude fixes
+- Visual test 2026-10-24: pilot selection works, and Mi-28 reaches waypoint horizontally but descends near tanks.
+- Bug: old waypoint completion checked only X/Z and stopped climb prematurely.
+- New arrival requires both X/Z within 4 blocks and altitude within 2.5 blocks.
+- Two-stage path: first climb to at least 14.5 blocks above terrain, only then cruise horizontally to destination at +17 blocks.
+- Mi-28 no longer starts with 0.16 thrust immediately on spawn.
+- Hold anchor remains at reached safe height.
+- This still needs in-game testing with video/logs.

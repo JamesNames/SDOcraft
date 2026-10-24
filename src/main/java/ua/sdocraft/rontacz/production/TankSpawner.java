@@ -47,7 +47,11 @@ public final class TankSpawner {
         vehicle.setEngineStartOver(true);
         if ("mi28".equals(kind)) {
             vehicle.setHoverMode(false);
-            vehicle.setPower(0.16f);
+            // Do not launch before an RTS move order; the previous 0.16
+            // rotor power triggered uncontrolled climbing immediately at spawn.
+            vehicle.setPower(0f);
+            vehicle.setEngineStart(false);
+            vehicle.setEngineStartOver(false);
         }
 
         if (!world.addFreshEntity(vehicle)) {

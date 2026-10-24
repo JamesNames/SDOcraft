@@ -45,7 +45,7 @@ public final class TankMoveGoal extends MoveToTargetBlockGoal {
         previousTankPosition = tank.position();
         warnedFallback = false;
         if (target == null) tank.processInput((short) 0);
-        else RonTacZ.LOGGER.info("M1A2 RTS move order: commander={}, target={}, vehicle={}, seat={}",
+        else RonTacZ.LOGGER.info("RTS vehicle move order: commander={}, target={}, vehicle={}, seat={}",
             commander.getId(), target, tank.getId(), tank.getSeatIndex(commander));
     }
 
@@ -58,6 +58,8 @@ public final class TankMoveGoal extends MoveToTargetBlockGoal {
         VehicleEntity tank = tank();
         if (tank == null) return super.isAtDestination();
         if (moveTarget == null) return true;
+        if (tank.getVehicleType() == VehicleType.HELICOPTER)
+            return HelicopterFlightController.reached(tank, moveTarget);
         double dx = tank.getX() - (moveTarget.getX() + 0.5);
         double dz = tank.getZ() - (moveTarget.getZ() + 0.5);
         return dx * dx + dz * dz <= 25;
@@ -109,9 +111,7 @@ public final class TankMoveGoal extends MoveToTargetBlockGoal {
         // grousers. The same selectable RTS crew delivers the destination.
         if (tank.getVehicleType() == VehicleType.HELICOPTER) {
             HelicopterFlightController.flyTo(tank, moveTarget, worldTick);
-            double hx = tank.getX() - (moveTarget.getX() + 0.5);
-            double hz = tank.getZ() - (moveTarget.getZ() + 0.5);
-            if (hx * hx + hz * hz <= 36.0 && !tank.onGround()) {
+            if (HelicopterFlightController.reached(tank, moveTarget)) {
                 stopMoving();
                 HelicopterFlightController.hold(tank);
             }
