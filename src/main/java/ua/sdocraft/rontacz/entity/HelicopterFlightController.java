@@ -3,90 +3,93 @@ package ua.sdocraft.rontacz.entity;
 import com.atsuishio.superbwarfare.entity.vehicle.base.VehicleEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.level.levelgen.Heightmap;
+import net.minecraft.world.phys.Vec3;
 import ua.sdocraft.rontacz.RonTacZ;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
+
 /**
- * Experimental independent RTS helicopter autopilot for Superb Warfare 0.8.9.2.
- *
- * The native helicopter physics performs lift/thrust/yaw/roll; the RTS pilot
- * adjusts rotor power and simulated mouse input toward the target.
- * No terrain-following route planning or collision avoidance is claimed.
+ * RTS experimental controlled-flight mode for the SBW Mi-28.
+ * Its normal pilot flight model requires analog mouse inputs and has no
+ * stable altitude PID; do NOT drive its unbounded rotor thrust directly.
+ * Instead, apply small per-tick collision checked displacements on the server.
+ * This is a prototype, not native aviation physics/pathfinding.
  */
 public final class HelicopterFlightController {
     private HelicopterFlightController() { }
+    private static final Map<UUID, Vec3> hoverTargets = new HashMap<>();
 
-    /** Keep the rotor powered when stopped in mid-air (do not drop the aircraft). */
-    public static void hold(VehicleEntity heli) {
+    public static void release(VehicleEntity heli) {
+        hoverTargets.remove(heli.getUUID());
+        heli.setNoGravity(false);
+        heli.setPower(0f);
+        heli.mouseInput(0, 0);
+        heli.processInput((short)0);
+    }
+
+    private static void prepare(VehicleEntity heli) {
         if (heli.isWreck()) return;
+        if (heli.getEnergy() < 20000) heli.setEnergy(heli.getMaxEnergy());
+        heli.setNoGravity(true);
         heli.setEngineStart(true);
         heli.setEngineStartOver(true);
         heli.setHoverMode(false);
-        // Native SBW helicopter vertical physics: rotor power ~0.12 balances gravity.
-        float power = (float) Mth.clamp(
-            0.122 - heli.getDeltaMovement().y * 0.22,
-            0.07, 0.155
-        );
-        heli.setPower(power);
-        float pitchInput = Mth.clamp(-heli.getXRot() * 0.5f, -4f, 4f);
-        heli.mouseInput(0, pitchInput);
-        heli.processInput((short) 0);
+        // Keep the rotors visualized with only minimal native lift.
+        // Never use power 0.12+; SBW converts that into sustained upward acceleration.
+        heli.setPower(0.006f);
+        heli.processInput((short)0);
+        heli.mouseInput(0, 0);
+        heli.setXRot(Mth.approach(heli.getXRot(), 0f, 2.5f));
+        heli.setZRot(Mth.approach(heli.getZRot(), 0f, 2.5f));
+    }
+
+    private static void applyTarget(VehicleEntity heli, Vec3 dest, double maxSpeed) {
+        Vec3 delta = dest.subtract(heli.position());
+        double horizontal = Math.hypot(delta.x, delta.z);
+        double length = Math.max(1e-7, delta.length());
+        if (horizontal > 1.0) {
+            float desiredYaw = (float)Math.toDegrees(Math.atan2(-delta.x, delta.z));
+            heli.setYRot(Mth.approachDegrees(heli.getYRot(), desiredYaw, 4.0f));
+        }
+        double vx = horizontal > 0.1 ? Mth.clamp(delta.x, -maxSpeed, maxSpeed) : 0;
+        double vz = horizontal > 0.1 ? Mth.clamp(delta.z, -maxSpeed, maxSpeed) : 0;
+        double vy = Mth.clamp(delta.y, -0.18, 0.18);
+
+        // End-of-level tick: native SBW physics has already run.
+        // Entity.move checks collision rather than teleporting through blocks.
+        heli.move(MoverType.SELF, new Vec3(vx, vy, vz));
+        heli.setDeltaMovement(Vec3.ZERO);
+        heli.hasImpulse = true;
+    }
+
+    public static void hold(VehicleEntity heli) {
+        if (heli.isWreck()) return;
+        prepare(heli);
+        Vec3 anchor = hoverTargets.computeIfAbsent(heli.getUUID(), ignored -> heli.position());
+        applyTarget(heli, anchor, 0.13);
     }
 
     public static void flyTo(VehicleEntity heli, BlockPos destination, long tick) {
         if (heli.isWreck()) return;
-        heli.setEngineStart(true);
-        heli.setEngineStartOver(true);
-        heli.setHoverMode(false);
-        if (heli.getEnergy() < 20000) heli.setEnergy(heli.getMaxEnergy());
-
-        double dx = destination.getX() + 0.5 - heli.getX();
-        double dz = destination.getZ() + 0.5 - heli.getZ();
-        double horizontalDistance = Math.sqrt(dx * dx + dz * dz);
-
-        // Keep air clearance above both current terrain and destination terrain.
-        int terrainHere = heli.level().getHeight(
-            Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, heli.blockPosition().getX(), heli.blockPosition().getZ());
-        int terrainThere = heli.level().getHeight(
-            Heightmap.Types.MOTION_BLOCKING_NO_LEAVES, destination.getX(), destination.getZ());
-        double targetAltitude = Math.min(
-            Math.max(Math.max(terrainHere, terrainThere) + 18d, destination.getY() + 18d),
-            heli.level().getMaxBuildHeight() - 8d
-        );
-        double altitudeError = targetAltitude - heli.getY();
-
-        // Vertical feedback controller: stronger thrust to take off/ascend, then
-        // reduce power near altitude. Clamp to avoid unreasonable acceleration.
-        float power = (float) Mth.clamp(
-            0.122 + altitudeError * 0.0027 - heli.getDeltaMovement().y * 0.19,
-            0.065, 0.172
-        );
-        heli.setPower(power);
-
-        float desiredYaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
-        float yawError = Mth.wrapDegrees(desiredYaw - heli.getYRot());
-
-        // Native heli code reads mouseMoveSpeedX to yaw; tank left/right
-        // keys alter lateral roll instead, so do not reuse tracked steering.
-        float yawInput = Mth.clamp(yawError * 0.42f, -5f, 5f);
-        // When nearly at the destination, level off rather than overshooting.
-        float desiredPitch = horizontalDistance > 10 && Math.abs(yawError) < 38f
-            ? 12f : 0f;
-        float pitchInput = Mth.clamp((desiredPitch - heli.getXRot()) * 0.48f, -4f, 4f);
-        heli.mouseInput(yawInput, pitchInput);
-        heli.processInput((short) 0);
-
-        // On ground, SBW mouse yaw is deliberately slow. Point into the desired
-        // takeoff heading without setting the position or bypassing collisions.
-        if (heli.onGround() && horizontalDistance > 10)
-            heli.setYRot(Mth.approachDegrees(heli.getYRot(), desiredYaw, 3f));
-
-        if (tick % 80L == 0L) {
-            RonTacZ.LOGGER.info(
-                "Mi-28 RTS flight: id={} pos={} destination={} altTarget={} altError={} headingError={} power={} speed={} airborne={}",
-                heli.getId(), heli.blockPosition(), destination, targetAltitude,
-                altitudeError, yawError, power, heli.getDeltaMovement().length(), !heli.onGround()
-            );
+        prepare(heli);
+        hoverTargets.remove(heli.getUUID());
+        int here = heli.level().getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+            heli.blockPosition().getX(), heli.blockPosition().getZ());
+        int there = heli.level().getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
+            destination.getX(), destination.getZ());
+        double targetAlt = Math.min(
+            Math.max(Math.max(here, there) + 17, destination.getY() + 17),
+            heli.level().getMaxBuildHeight() - 10);
+        Vec3 target = new Vec3(destination.getX()+0.5, targetAlt, destination.getZ()+0.5);
+        applyTarget(heli, target, 0.19);
+        if (tick % 60L == 0) {
+            RonTacZ.LOGGER.info("Mi-28 RTS fixed flight: id={} pos={} destination={} altitude={} targetAltitude={} velocity={} onGround={}",
+                heli.getId(), heli.blockPosition(), destination, heli.getY(), targetAlt,
+                heli.getDeltaMovement().length(), heli.onGround());
         }
     }
 }
