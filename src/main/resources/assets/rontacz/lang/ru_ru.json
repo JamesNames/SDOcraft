@@ -4,5 +4,6 @@
   "entity.rontacz.machine_gunner_unit": "Пулемётчик",
   "entity.rontacz.tank_crew_unit": "Экипаж M1A2",
   "entity.rontacz.t90_crew_unit": "Экипаж Т-90А",
-  "entity.rontacz.mi28_crew_unit": "Пилот Ми-28"
+  "entity.rontacz.mi28_crew_unit": "Пилот Ми-28",
+  "error.rontacz.wrong_faction_vehicle": "Техника другой стороны! ВФСМ используют Abrams, ВНР используют Т-90А"
 }

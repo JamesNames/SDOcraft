@@ -16,6 +16,8 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.FormattedCharSequence;
 import net.minecraft.world.level.Level;
 import ua.sdocraft.rontacz.entity.ModEntities;
+import ua.sdocraft.rontacz.faction.MilitaryFaction;
+import ua.sdocraft.rontacz.entity.RiflemanUnit;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -29,7 +31,9 @@ public final class RiflemanProd extends ProductionItem implements IUnitProductio
         super(COST);
         this.onComplete = (Level level, ProductionPlacement placement) -> {
             if (!level.isClientSide()) {
-                placement.produceUnit((ServerLevel) level, ModEntities.RIFLEMAN.get(), placement.ownerName, true);
+                var unit = placement.produceUnit((ServerLevel) level, ModEntities.RIFLEMAN.get(), placement.ownerName, true);
+                if (unit instanceof RiflemanUnit soldier)
+                    MilitaryFaction.applyToUnit((ServerLevel) level, soldier);
             }
         };
     }

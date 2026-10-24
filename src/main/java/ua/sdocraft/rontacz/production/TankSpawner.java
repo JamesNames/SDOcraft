@@ -8,6 +8,7 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import ua.sdocraft.rontacz.RonTacZ;
 import ua.sdocraft.rontacz.entity.TankCrewUnit;
+import ua.sdocraft.rontacz.faction.MilitaryFaction;
 
 /** Spawn native Superb Warfare vehicles and mount a selectable Reign of Nether driver. */
 public final class TankSpawner {
@@ -18,6 +19,10 @@ public final class TankSpawner {
     }
 
     public static void spawnVehicle(ServerLevel world, TankCrewUnit commander, String kind) {
+        if (!MilitaryFaction.canRecruit(world, commander.getOwnerName(), kind)) {
+            RonTacZ.LOGGER.warn("Faction {} may not recruit {}", commander.getOwnerName(), kind);
+            return;
+        }
         EntityType<?> type = switch (kind) {
             case "m1a2" -> ModEntities.M_1A_2.get();
             case "t90a" -> ModEntities.T_90A.get();
@@ -49,6 +54,7 @@ public final class TankSpawner {
             RonTacZ.LOGGER.error("Failed adding {} to the world", kind);
             return;
         }
+        MilitaryFaction.applyToVehicle(world, vehicle, commander.getOwnerName(), kind);
         if (!commander.startRiding(vehicle, true)) {
             RonTacZ.LOGGER.error("RTS commander {} could not mount {}", commander.getId(), kind);
             return;

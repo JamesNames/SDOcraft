@@ -18,6 +18,8 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
 import ua.sdocraft.rontacz.entity.TankCrewUnit;
 import ua.sdocraft.rontacz.entity.ModEntities;
+import ua.sdocraft.rontacz.entity.RiflemanUnit;
+import ua.sdocraft.rontacz.faction.MilitaryFaction;
 import ua.sdocraft.rontacz.RonTacZ;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,9 +48,23 @@ public final class ArmyUnitProd extends ProductionItem implements IUnitProductio
             EntityType<? extends com.solegendary.reignofnether.unit.interfaces.Unit> type =
                 (EntityType<? extends com.solegendary.reignofnether.unit.interfaces.Unit>)(Object)this.entityType.get();
             var unit=placement.produceUnit(server,type,placement.ownerName,true);
-            if (vehicleId != null && unit instanceof TankCrewUnit crew) TankSpawner.spawnVehicle(server, crew, vehicleId);
+            if (unit instanceof RiflemanUnit soldier)
+                MilitaryFaction.applyToUnit(server, soldier);
+            if (vehicleId != null && unit instanceof TankCrewUnit crew)
+                TankSpawner.spawnVehicle(server, crew, vehicleId);
         };
     }
+    @Override public boolean canProduce(ProductionPlacement placement) {
+        return (vehicleId == null || MilitaryFaction.canRecruit(placement.getLevel(), placement.ownerName, vehicleId))
+            && super.canProduce(placement);
+    }
+
+    @Override public String getProduceErrorMsg(ProductionPlacement placement) {
+        if (vehicleId != null && !MilitaryFaction.canRecruit(placement.getLevel(), placement.ownerName, vehicleId))
+            return "error.rontacz.wrong_faction_vehicle";
+        return super.getProduceErrorMsg(placement);
+    }
+
     @Override public String getItemName() {return display;}
     @Override public UnitSpawnButton getPlaceButton() {
        return new UnitSpawnButton(display,ICON,List.of(Component.literal(display).getVisualOrderText()));
@@ -61,7 +77,9 @@ public final class ArmyUnitProd extends ProductionItem implements IUnitProductio
            FormattedCharSequence.EMPTY,
            Component.literal(vehicleId != null ? "Superb Warfare RTS vehicle: " + vehicleId : "TaCZ gun combat unit").getVisualOrderText()
         ));
-        return new StartProductionButton(display,ICON,hotkey,()->false,()->true,tooltip,this);
+        return new StartProductionButton(display,ICON,hotkey,()->false,
+            () -> vehicleId == null || MilitaryFaction.canRecruit(building.getLevel(), building.ownerName, vehicleId),
+            tooltip,this);
     }
     @Override public StopProductionButton getCancelButton(ProductionPlacement building,boolean first) {
        return new StopProductionButton(display,ICON,building,this,first);

@@ -22,5 +22,5 @@ jobs:
         if: success()
         uses: actions/upload-artifact@v4
         with:
-          name: rontacz-sbw-v0.3-jar
-          path: build/libs/rontacz-riflemen-0.3.0.jar
+          name: rontacz-vnr-vfsm-v0.4-jar
+          path: build/libs/rontacz-riflemen-0.4.0.jar
