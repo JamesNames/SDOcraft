@@ -14,9 +14,9 @@ import ua.sdocraft.rontacz.RonTacZ;
  * On difficult terrain, a worker can get stuck before reaching the outside
  * build perimeter, leaving a paid-for building at 0%.
  *
- * After six seconds, give these two custom buildings a slow fallback build
- * whenever no builder is actively constructing. Regular villager building and
- * normal repairs keep working unchanged.
+ * Stuck workers often remain registered as builders even though they cannot
+ * reach the expanded footprint. Accelerate both construction paths, with or
+ * without a worker. Vanilla buildings and completed building repairs untouched.
  */
 @Mixin(value=ProductionPlacement.class, remap=false)
 public abstract class MilitaryConstructionFallbackMixin {
@@ -32,14 +32,23 @@ public abstract class MilitaryConstructionFallbackMixin {
             if (building.selfBuilding) building.selfBuilding=false;
             return;
         }
-        if (building.tickAge > 120 && building.getBuilders().isEmpty()) {
+        // RoN's getBuilders() counts a worker with a building goal even if it
+        // cannot path to the 23x21 hangar. v0.5.3 mistakenly waited for zero.
+        if (building.tickAge > 60) {
             if (!building.selfBuilding) {
-                building.selfBuilding=true;
-                RonTacZ.LOGGER.warn("Military construction fallback started: owner={} origin={} building={} age={}",
-                    building.ownerName,building.originPos,building.getBuilding().getClass().getSimpleName(),building.tickAge);
+                RonTacZ.LOGGER.warn(
+                    "RTS military auto-construction active: owner={} origin={} structure={} age={} workers={} built={}/{}",
+                    building.ownerName, building.originPos,
+                    building.getBuilding().getClass().getSimpleName(),building.tickAge,
+                    building.getBuilders().size(),building.getBlocksPlaced(),
+                    building.getBlocksTotal());
             }
+            building.selfBuilding = true;
+            // When workers are assigned, selfBuilding is not consulted by
+            // RoN's building tick. Force its construction timer to expire,
+            // allowing one real block of the blueprint every server tick.
+            building.msToNextBuild = Math.min(building.msToNextBuild, 0f);
+            building.maxBlocksPerTick = Math.max(building.maxBlocksPerTick, 2);
         }
-        if (building.selfBuilding && !building.getBuilders().isEmpty())
-            building.selfBuilding=false;
     }
 }

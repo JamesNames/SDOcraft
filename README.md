@@ -169,3 +169,10 @@ and automatic war in single-player are not yet implemented.
 - In case of no flat external vehicle spawn, fail and refund rather than silently generate the machine through the landscape.
 - Newly constructed military barracks and vehicle hangars automatically continue slow construction after 6 seconds if villagers cannot reach the construction perimeter; assigned builders still work normally.
 - Production failures logged under `RTS production failed` and `Refunded failed RTS production`.
+
+### v0.5.4: stalled construction / Javelin RTS target lock
+- Fixed military construction stuck when a villager is assigned as a builder but cannot physically reach the expanded 15x13 / 23x21 foundations. The two structures enable self-building after 60 ticks whether builders exist or not and speed the real RoN block placement.
+- Construction is still a genuine Minecraft block-by-block process, not a fake finished-building flag. Normal building types and completed-building repairs are untouched.
+- Javelin now attacks ONLY explicitly ordered enemy tank crews and resolves the genuine tank vehicle hitbox for line of sight, rather than the rider inside.
+- Real Javelin missiles retain the clicked vehicle UUID for up to six seconds of flight; tracking is not transferred to other arbitrary/friendly tanks.
+- World backup recommended before building large structures. A completely invalid red placement preview is a separate placement issue. Live-game results still require testing.
