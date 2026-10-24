@@ -1,4 +1,4 @@
-# RoN x TaCZ x Superb Warfare v0.4.3
+# RoN x TaCZ x Superb Warfare v0.4.4
 Minecraft Forge 1.20.1
 Required mods: Reign of Nether 1.5.0b, TaCZ 1.1.8-hotfix2, Superb Warfare **0.8.9.2** (file 9019882), Kotlin for Forge 4.12.0.
 
@@ -41,7 +41,7 @@ Install resulting JAR on both client/server alongside dependencies.
 - Airborne routing, landing, terrain avoidance, missile targeting, combat and safe rotor behavior are **not proven in live gameplay**. Spawn on open flat ground; test in creative.
 - Both currently trained at Barracks using pillager cost; separate factories/helipad and balance later.
 
-## VNR vs VFSM v0.4.3 — two opposing military sides (first playable integration)
+## VNR vs VFSM v0.4.4 — two opposing military sides (first playable integration)
 Choose a side as a Reign of Nether **Villagers** RTS player:
 ```
 /rontacz faction vnr
@@ -61,14 +61,14 @@ Both players still choose the Villagers base faction and assign a military side 
 Faction buildings, rank-specific combat stats, faction AI bots, own colored 3D skins,
 and automatic war in single-player are not yet implemented.
 
-### v0.4.3 Mi-28 stability and selection
+### v0.4.4 Mi-28 stability and selection
 - Fixed unlimited rotor thrust / unbounded climb: RTS flight drives a capped, collision-aware step every server tick with gravity disabled while an RTS pilot is mounted.
 - Pilot selection by a ray hit on the aircraft beyond RoN's 30-block ground cursor radius.
 - Hover target uses previous hold position; new move command resets hold anchor.
 - On dismount Mi-28 restores gravity.
 - Important: this is controlled arcade flight, NOT the physical Superb Warfare flight model. Rotor animation may be limited; collision routing, missile autoattack, safe landing remain unsupported.
 
-### v0.4.3 Mi-28 waypoint altitude fixes
+### v0.4.4 Mi-28 waypoint altitude fixes
 - Visual test 2026-10-24: pilot selection works, and Mi-28 reaches waypoint horizontally but descends near tanks.
 - Bug: old waypoint completion checked only X/Z and stopped climb prematurely.
 - New arrival requires both X/Z within 4 blocks and altitude within 2.5 blocks.
@@ -77,9 +77,20 @@ and automatic war in single-player are not yet implemented.
 - Hold anchor remains at reached safe height.
 - This still needs in-game testing with video/logs.
 
-### v0.4.3 Mi-28 stable single-controller flight
+### v0.4.4 Mi-28 stable single-controller flight
 - Corrected root cause of ceiling-hitting and jerky flying: SBW native rotor travel and RTS position movement both affected helicopter concurrently.
 - Cancel native VehicleEntity.travel() **only while** our Mi28CrewUnit occupies helicopter pilot seat; keep model, weapons, rotor animation and rendering.
 - Smooth, acceleration-limited RTS travel with collision-aware movement, altitude cap, and slow-to-stop behavior.
 - Vertical ascent first, horizontal move second, and stable waypoint hover after arrival.
 - Tested: Gradle build only; physics still requires in-game verification.
+
+### v0.4.4 Superb Warfare infantry armor
+- All TaCZ riflemen, machine gunners, snipers are automatically equipped with Superb Warfare 3D armor.
+- VNR rebels: Russian 6B47 helmet, 6B43 chest; bronze leather trousers/boots.
+- VFSM regular army: US PASGT helmet, IOTV chest; cyan leather trousers/boots.
+- Unassigned-faction infantry: US vest/helmet + neutral-grey leather pants/boots.
+- Original SBW ballistic resistance / durability remain active because the armor items are the mod's own classes.
+- Uniform reapplication does not heal existing chest/helmet armor durability.
+- All tank/pilot crews retain their existing color-tinted lightweight armor.
+- Already recruited infantry: use `/rontacz faction vnr` or `/rontacz faction vfsm` again to refresh their equipped gear.
+- The armor textures are the original Superb Warfare texture colors, not dynamically dyed bronze/cyan.

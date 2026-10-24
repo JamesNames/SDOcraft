@@ -1,6 +1,8 @@
 package ua.sdocraft.rontacz.faction;
 
 import net.minecraft.ChatFormatting;
+import com.atsuishio.superbwarfare.init.ModItems;
+import net.minecraft.world.item.Item;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.Style;
 import net.minecraft.network.chat.TextColor;
@@ -105,7 +107,13 @@ public final class MilitaryFaction {
 
     public static void applyToUnit(ServerLevel world, RiflemanUnit unit) {
         Side side = sideOf(world, unit.getOwnerName());
-        if (side == null) return;
+        // Even when no side is chosen, military infantry receive real Superb
+        // Warfare armor. Default to neutral-grey pants with US-pattern gear.
+        if (side == null) {
+            if (!(unit instanceof TankCrewUnit))
+                equipInfantryArmor(unit, Side.VFSM, 0x76818B);
+            return;
+        }
 
         Scoreboard sb = world.getScoreboard();
         sb.addPlayerToTeam(unit.getScoreboardName(), getOrMakeTeam(world, side));
@@ -117,16 +125,44 @@ public final class MilitaryFaction {
             .withStyle(Style.EMPTY.withColor(TextColor.fromRgb(side.rgb))));
         unit.setCustomNameVisible(true);
 
-        // Both sides wear identical armor strength, with faction-colored uniforms.
-        applyLeather(unit, EquipmentSlot.HEAD, new ItemStack(Items.LEATHER_HELMET), side.rgb);
-        applyLeather(unit, EquipmentSlot.CHEST, new ItemStack(Items.LEATHER_CHESTPLATE), side.rgb);
-        applyLeather(unit, EquipmentSlot.LEGS, new ItemStack(Items.LEATHER_LEGGINGS), side.rgb);
-        applyLeather(unit, EquipmentSlot.FEET, new ItemStack(Items.LEATHER_BOOTS), side.rgb);
+        // Tank/air crews keep their existing color-coded lightweight uniform.
+        // Infantry get real SBW 3D ballistic helmets and chest plates.
+        if (unit instanceof TankCrewUnit) {
+            applyLeather(unit, EquipmentSlot.HEAD, Items.LEATHER_HELMET, side.rgb);
+            applyLeather(unit, EquipmentSlot.CHEST, Items.LEATHER_CHESTPLATE, side.rgb);
+            applyLeather(unit, EquipmentSlot.LEGS, Items.LEATHER_LEGGINGS, side.rgb);
+            applyLeather(unit, EquipmentSlot.FEET, Items.LEATHER_BOOTS, side.rgb);
+        } else {
+            equipInfantryArmor(unit, side, side.rgb);
+        }
     }
 
-    private static void applyLeather(RiflemanUnit unit, EquipmentSlot slot, ItemStack armor, int rgb) {
-        if (armor.getItem() instanceof DyeableLeatherItem dye) dye.setColor(armor, rgb);
-        unit.setItemSlot(slot, armor);
+    private static void equipInfantryArmor(RiflemanUnit unit, Side side, int color) {
+        // Version-pinned item registrations from Superb Warfare 0.8.9.2.
+        Item helmet = side == Side.VNR
+            ? ModItems.RU_HELMET_6B47.get() : ModItems.US_HELMET_PASGT.get();
+        Item chest = side == Side.VNR
+            ? ModItems.RU_CHEST_6B43.get() : ModItems.US_CHEST_IOTV.get();
+
+        // Preserve armor damage when the user is promoted or the same team is
+        // reselected; only swap equipment on a genuinely different uniform.
+        if (!unit.getItemBySlot(EquipmentSlot.HEAD).is(helmet))
+            unit.setItemSlot(EquipmentSlot.HEAD, new ItemStack(helmet));
+        if (!unit.getItemBySlot(EquipmentSlot.CHEST).is(chest))
+            unit.setItemSlot(EquipmentSlot.CHEST, new ItemStack(chest));
+
+        // SBW helmet/chest textures are fixed, so use dyed trousers/boots for
+        // visible bronze/cyan faction identity without custom model overrides.
+        applyLeather(unit, EquipmentSlot.LEGS, Items.LEATHER_LEGGINGS, color);
+        applyLeather(unit, EquipmentSlot.FEET, Items.LEATHER_BOOTS, color);
+    }
+
+    private static void applyLeather(RiflemanUnit unit, EquipmentSlot slot, Item armorItem, int rgb) {
+        ItemStack stack = unit.getItemBySlot(slot);
+        if (!stack.is(armorItem)) stack = new ItemStack(armorItem);
+        if (stack.getItem() instanceof DyeableLeatherItem dye)
+            dye.setColor(stack, rgb);
+        unit.setItemSlot(slot, stack);
     }
 
     public static void applyToVehicle(ServerLevel world, Entity vehicle, String owner, String vehicleId) {
