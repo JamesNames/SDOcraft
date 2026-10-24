@@ -41,6 +41,8 @@ public final class TankMoveGoal extends MoveToTargetBlockGoal {
             return;
         }
         moveTarget = target;
+        if (tank.getVehicleType() == VehicleType.HELICOPTER && target != null)
+            HelicopterFlightController.newOrder(tank);
         noProgressTicks = 0;
         previousTankPosition = tank.position();
         warnedFallback = false;

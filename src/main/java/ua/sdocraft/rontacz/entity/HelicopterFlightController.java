@@ -13,22 +13,44 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * RTS experimental controlled-flight mode for the SBW Mi-28.
- * Its normal pilot flight model requires analog mouse inputs and has no
- * stable altitude PID; do NOT drive its unbounded rotor thrust directly.
- * Instead, apply small per-tick collision checked displacements on the server.
- * This is a prototype, not native aviation physics/pathfinding.
+ * Predictable RTS flight controller, applied once each server-level tick.
+ * Native SBW helicopter travel is cancelled only while our Mi-28 RTS pilot
+ * occupies the first seat. This controller handles all movement, with bounded
+ * velocity, acceleration, altitude and yaw. No teleportation through blocks.
  */
 public final class HelicopterFlightController {
     private HelicopterFlightController() { }
-    private static final Map<UUID, Vec3> hoverTargets = new HashMap<>();
+
+    private static final double CRUISE_SPEED = 0.30; // blocks/tick
+    private static final double UP_SPEED = 0.19;
+    private static final double DOWN_SPEED = 0.13;
+    private static final double ACCELERATION = 0.024;
+    private static final double MAX_WORLD_ALT_MARGIN = 12;
+    private static final double ALT_CLEARANCE = 17;
+
+    private static final Map<UUID, FlightState> flightStates = new HashMap<>();
+    private static final class FlightState {
+        Vec3 velocity=Vec3.ZERO;
+        Vec3 anchor;
+    }
+
+    private static FlightState state(VehicleEntity heli) {
+        return flightStates.computeIfAbsent(heli.getUUID(), ignored->new FlightState());
+    }
 
     public static void release(VehicleEntity heli) {
-        hoverTargets.remove(heli.getUUID());
+        flightStates.remove(heli.getUUID());
         heli.setNoGravity(false);
+        heli.setEngineStart(false);
+        heli.setEngineStartOver(false);
+        heli.setSynchedPropellerRot(0f);
         heli.setPower(0f);
-        heli.mouseInput(0, 0);
+        heli.mouseInput(0,0);
         heli.processInput((short)0);
+    }
+
+    public static void newOrder(VehicleEntity heli) {
+        state(heli).anchor=null;
     }
 
     private static void prepare(VehicleEntity heli) {
@@ -38,76 +60,98 @@ public final class HelicopterFlightController {
         heli.setEngineStart(true);
         heli.setEngineStartOver(true);
         heli.setHoverMode(false);
-        // Keep the rotors visualized with only minimal native lift.
-        // Never use power 0.12+; SBW converts that into sustained upward acceleration.
-        heli.setPower(0.006f);
+        // SBW's native movement is cancelled by RTSHelicopterPhysicsMixin.
+        // This power is for engine status only, never used to produce movement.
+        heli.setPower(0.04f);
         heli.processInput((short)0);
-        heli.mouseInput(0, 0);
-        heli.setXRot(Mth.approach(heli.getXRot(), 0f, 2.5f));
-        heli.setZRot(0f);
+        heli.mouseInput(0,0);
     }
 
-    private static void applyTarget(VehicleEntity heli, Vec3 dest, double maxSpeed) {
-        Vec3 delta = dest.subtract(heli.position());
-        double horizontal = Math.hypot(delta.x, delta.z);
-        if (horizontal > 1.0) {
-            float desiredYaw = (float)Math.toDegrees(Math.atan2(-delta.x, delta.z));
-            heli.setYRot(Mth.approachDegrees(heli.getYRot(), desiredYaw, 4.0f));
-        }
-        double vx = horizontal > 0.1 ? Mth.clamp(delta.x, -maxSpeed, maxSpeed) : 0;
-        double vz = horizontal > 0.1 ? Mth.clamp(delta.z, -maxSpeed, maxSpeed) : 0;
-        double vy = Mth.clamp(delta.y, -0.18, 0.18);
-
-        // End-of-level tick: native SBW physics has already run.
-        // Entity.move checks collision rather than teleporting through blocks.
-        heli.move(MoverType.SELF, new Vec3(vx, vy, vz));
-        heli.setDeltaMovement(Vec3.ZERO);
-        heli.hasImpulse = true;
-    }
-
-    public static void hold(VehicleEntity heli) {
-        if (heli.isWreck()) return;
-        prepare(heli);
-        Vec3 anchor = hoverTargets.computeIfAbsent(heli.getUUID(), ignored -> heli.position());
-        applyTarget(heli, anchor, 0.13);
-    }
-
-    /** Cruise level relative to the terrain and waypoint (never lower than 17 blocks above). */
     public static double targetAltitude(VehicleEntity heli, BlockPos destination) {
         int here = heli.level().getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
             heli.blockPosition().getX(), heli.blockPosition().getZ());
         int there = heli.level().getHeight(Heightmap.Types.MOTION_BLOCKING_NO_LEAVES,
             destination.getX(), destination.getZ());
-        return Math.min(
-            Math.max(Math.max(here, there) + 17, destination.getY() + 17),
-            heli.level().getMaxBuildHeight() - 10);
+        double required=Math.max(Math.max(here,there)+ALT_CLEARANCE,
+            destination.getY()+ALT_CLEARANCE);
+        return Mth.clamp(required, heli.level().getMinBuildHeight()+5,
+            heli.level().getMaxBuildHeight()-MAX_WORLD_ALT_MARGIN);
     }
 
-    /** Stop is allowed only after both the horizontal AND vertical legs finish. */
     public static boolean reached(VehicleEntity heli, BlockPos destination) {
-        double dx = heli.getX() - (destination.getX()+0.5);
-        double dz = heli.getZ() - (destination.getZ()+0.5);
-        return dx*dx + dz*dz <= 16.0
-            && Math.abs(heli.getY()-targetAltitude(heli, destination)) <= 2.5;
+        double dx=heli.getX()-destination.getX()-0.5;
+        double dz=heli.getZ()-destination.getZ()-0.5;
+        return dx*dx+dz*dz <= 12.25
+            && Math.abs(heli.getY()-targetAltitude(heli,destination)) <= 1.5;
+    }
+
+    /** Desired velocity is proportional to distance; smooth approach limits jerk. */
+    private static double smooth(double current, double desired) {
+        return Mth.clamp(desired,current-ACCELERATION,current+ACCELERATION);
+    }
+
+    private static void step(VehicleEntity heli, Vec3 dest, FlightState flight, boolean verticalOnly) {
+        Vec3 pos=heli.position();
+        Vec3 delta=dest.subtract(pos);
+        double horizontal=Math.hypot(delta.x, delta.z);
+        double desiredVx=verticalOnly ? 0 : Mth.clamp(delta.x*0.065,-CRUISE_SPEED,CRUISE_SPEED);
+        double desiredVz=verticalOnly ? 0 : Mth.clamp(delta.z*0.065,-CRUISE_SPEED,CRUISE_SPEED);
+        double desiredVy=Mth.clamp(delta.y*0.11,-DOWN_SPEED,UP_SPEED);
+        if (horizontal>0.8 && !verticalOnly) {
+            float yaw=(float)Math.toDegrees(Math.atan2(-delta.x,delta.z));
+            heli.setYRot(Mth.approachDegrees(heli.getYRot(),yaw,4.5f));
+        }
+
+        Vec3 vel=flight.velocity;
+        vel=new Vec3(smooth(vel.x,desiredVx),smooth(vel.y,desiredVy),smooth(vel.z,desiredVz));
+        // Avoid diagonal horizontal movement being faster than the speed cap.
+        double speedXZ=Math.hypot(vel.x,vel.z);
+        if (speedXZ>CRUISE_SPEED) vel=new Vec3(vel.x*CRUISE_SPEED/speedXZ,vel.y,
+            vel.z*CRUISE_SPEED/speedXZ);
+        // Stop near waypoint to avoid oscillation and 'bouncing off a ceiling'.
+        if (horizontal<0.15 && Math.abs(delta.y)<0.15) vel=Vec3.ZERO;
+
+        Vec3 before=heli.position();
+        heli.move(MoverType.SELF,vel);
+        Vec3 moved=heli.position().subtract(before);
+        // Collision-aware: immediately cancel blocked velocity instead of
+        // repeatedly pushing against a wall or ceiling.
+        flight.velocity=moved;
+        heli.setDeltaMovement(Vec3.ZERO);
+        heli.hasImpulse=true;
+        heli.setXRot(Mth.approach(heli.getXRot(), (float)(-moved.horizontalDistance()*13),1.3f));
+        heli.setZRot(0f);
+    }
+
+    public static void hold(VehicleEntity heli) {
+        if (heli.isWreck()) return;
+        prepare(heli);
+        FlightState s=state(heli);
+        if (s.anchor == null) s.anchor=heli.position();
+        // Don't preserve an anchor above the world ceiling.
+        s.anchor=new Vec3(s.anchor.x,
+            Math.min(s.anchor.y,heli.level().getMaxBuildHeight()-MAX_WORLD_ALT_MARGIN),
+            s.anchor.z);
+        step(heli,s.anchor,s,false);
     }
 
     public static void flyTo(VehicleEntity heli, BlockPos destination, long tick) {
         if (heli.isWreck()) return;
         prepare(heli);
-        hoverTargets.remove(heli.getUUID());
-        // First climb above obstacles. Horizontal movement starts only at safe altitude.
-        double targetAlt = targetAltitude(heli, destination);
-        boolean stillClimbing = heli.getY() < targetAlt - 2.5;
-        Vec3 target = stillClimbing
-            ? new Vec3(heli.getX(), targetAlt, heli.getZ())
-            : new Vec3(destination.getX()+0.5, targetAlt, destination.getZ()+0.5);
+        FlightState s=state(heli);
+        s.anchor=null;
+        double altitude=targetAltitude(heli,destination);
+        double horizontal=Math.hypot(heli.getX()-destination.getX()-0.5,
+            heli.getZ()-destination.getZ()-0.5);
+        boolean ascending=heli.getY() < altitude-2.0;
+        Vec3 waypoint=ascending
+            ? new Vec3(heli.getX(),altitude,heli.getZ())
+            : new Vec3(destination.getX()+0.5,altitude,destination.getZ()+0.5);
+        step(heli,waypoint,s,ascending);
 
-        // Avoid rushing into tanks/buildings before takeoff is complete.
-        applyTarget(heli, target, stillClimbing ? 0.0 : 0.19);
-        if (tick % 60L == 0) {
-            RonTacZ.LOGGER.info("Mi-28 RTS fixed flight: id={} pos={} destination={} altitude={} targetAltitude={} velocity={} onGround={} ascentPhase={}",
-                heli.getId(), heli.blockPosition(), destination, heli.getY(), targetAlt,
-                heli.getDeltaMovement().length(), heli.onGround(), stillClimbing);
-        }
+        if (tick % 60 == 0) RonTacZ.LOGGER.info(
+            "Mi-28 RTS flight v0.4.3: id={} xyz={} altitude={} goal={} goalY={} ascending={} moving={} actualSpeed={}",
+            heli.getId(),heli.blockPosition(),heli.getY(),destination,altitude,
+            ascending,horizontal>3.5,s.velocity.length());
     }
 }
