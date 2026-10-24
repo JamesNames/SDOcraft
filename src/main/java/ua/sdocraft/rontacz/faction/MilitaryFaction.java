@@ -48,7 +48,9 @@ public final class MilitaryFaction {
         PlayerTeam team = scoreboard.getPlayerTeam(side.team);
         if (team == null) team = scoreboard.addPlayerTeam(side.team);
         team.setColor(side.formatting);
-        team.setAllowFriendlyFire(false);
+        // Side colors must not silently make RTS vehicle targets immune to SBW damage.
+        // RoN owner/alliance checks still prevent friendly automatic targeting.
+        team.setAllowFriendlyFire(true);
         return team;
     }
 

@@ -9,6 +9,7 @@ import net.minecraftforge.fml.common.Mod;
 import ua.sdocraft.rontacz.RonTacZ;
 import ua.sdocraft.rontacz.entity.TankCrewUnit;
 import ua.sdocraft.rontacz.entity.TankMoveGoal;
+import ua.sdocraft.rontacz.entity.RTSTankCombatController;
 
 import java.util.ArrayList;
 
@@ -25,6 +26,7 @@ public final class TankServerEvents {
                     && crew.level() == server && crew.isAlive()
                     && crew.getMoveGoal() instanceof TankMoveGoal goal) {
                 goal.driveTank();
+                RTSTankCombatController.tick(crew);
             }
         }
     }

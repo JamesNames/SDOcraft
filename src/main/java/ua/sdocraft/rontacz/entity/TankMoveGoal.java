@@ -121,7 +121,7 @@ public final class TankMoveGoal extends MoveToTargetBlockGoal {
         }
 
         // Restore energy so the prototype can be tested without refuelling.
-        if (tank.getEnergy() < 10000) tank.setEnergy(tank.getMaxEnergy());
+        // Preserve the vehicle's native fuel usage and damage behavior.
         tank.setEngineStart(true);
         tank.setEngineStartOver(true);
 

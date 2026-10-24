@@ -46,7 +46,7 @@ public class TankCrewUnit extends RiflemanUnit {
         if (tank.getFirstPassenger() != this || tank.isRemoved()) return;
         if (tank.getVehicleType() != VehicleType.HELICOPTER && !tank.getEngineStart()) tank.setEngineStart(true);
         if (tank.getVehicleType() != VehicleType.HELICOPTER && !tank.getEngineStartOver()) tank.setEngineStartOver(true);
-        if (tickCount % 100 == 0) tank.setEnergy(tank.getMaxEnergy());
+        // Energy is fuel, not health. No per-tick refueling or HP reset.
         // Driving is handled once per server level tick by TankServerEvents.
         LivingEntity target=getTarget();
         tank.setAiTurretTargetUUID(target != null && target.isAlive() ? target.getStringUUID() : "undefined");

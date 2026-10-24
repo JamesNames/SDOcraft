@@ -55,7 +55,7 @@ public final class HelicopterFlightController {
 
     private static void prepare(VehicleEntity heli) {
         if (heli.isWreck()) return;
-        if (heli.getEnergy() < 20000) heli.setEnergy(heli.getMaxEnergy());
+        // Preserve Superb Warfare fuel consumption.
         heli.setNoGravity(true);
         heli.setEngineStart(true);
         heli.setEngineStartOver(true);
