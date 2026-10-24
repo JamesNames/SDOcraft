@@ -52,8 +52,9 @@ public final class MilitaryFactionCommands {
                 count++;
             }
         }
+        final int unitsUpdated = count;
         source.sendSuccess(() -> Component.literal(
-            "Сторона: " + side.name + ". Перекрашено юнитов: " + count +
+            "Сторона: " + side.name + ". Перекрашено юнитов: " + unitsUpdated +
             ". ВФСМ: Abrams, ВНР: T-90A. Ми-28 доступен обеим сторонам."), false);
         return 1;
     }
