@@ -1,53 +1,60 @@
 package ua.sdocraft.rontacz.entity;
 
-import com.solegendary.reignofnether.unit.goals.MoveToTargetBlockGoal;
 import com.atsuishio.superbwarfare.entity.vehicle.base.VehicleEntity;
+import com.solegendary.reignofnether.unit.goals.MoveToTargetBlockGoal;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
+import net.minecraft.world.entity.MoverType;
+import net.minecraft.world.phys.Vec3;
+import ua.sdocraft.rontacz.RonTacZ;
+
 import javax.annotation.Nullable;
 
 /**
- * When mounted: direct steering of SBW tracked M1A2.
- * When dismounted: regular Reign of Nether infantry pathfinding.
+ * Reign of Nether move goal with TWO modes:
+ * walking = native RoN ground navigation,
+ * mounted = Superb Warfare controls with collision-aware fallback if the vehicle
+ * refuses input for more than ~2 seconds.
  */
 public final class TankMoveGoal extends MoveToTargetBlockGoal {
     private final TankCrewUnit commander;
+    private long lastDriveTick = Long.MIN_VALUE;
+    private Vec3 previousTankPosition = null;
+    private int noProgressTicks = 0;
+    private boolean warnedFallback = false;
 
     public TankMoveGoal(TankCrewUnit commander) {
         super(commander, false, 0);
         this.commander = commander;
     }
 
-    private VehicleEntity vehicle() {
-        return commander.getVehicle() instanceof VehicleEntity v ? v : null;
+    private VehicleEntity tank() {
+        return commander.getVehicle() instanceof VehicleEntity tank ? tank : null;
     }
 
-    @Override public void setMoveTarget(@Nullable BlockPos target) {
-        VehicleEntity tank = vehicle();
-        if (tank != null) {
-            moveTarget = target;
-            if (target == null) tank.processInput((short) 0);
-        } else super.setMoveTarget(target);
+    @Override
+    public void setMoveTarget(@Nullable BlockPos target) {
+        VehicleEntity tank = tank();
+        if (tank == null) {
+            super.setMoveTarget(target);
+            return;
+        }
+        moveTarget = target;
+        noProgressTicks = 0;
+        previousTankPosition = tank.position();
+        warnedFallback = false;
+        if (target == null) tank.processInput((short) 0);
+        else RonTacZ.LOGGER.info("M1A2 RTS move order: commander={}, target={}, vehicle={}, seat={}",
+            commander.getId(), target, tank.getId(), tank.getSeatIndex(commander));
     }
 
-    @Override public boolean canUse() {
-        return vehicle() != null ? moveTarget != null : super.canUse();
-    }
-
-    @Override public boolean canContinueToUse() {
-        return vehicle() != null ? moveTarget != null : super.canContinueToUse();
-    }
-
-    @Override public void start() {
-        if (vehicle() == null) super.start();
-    }
-
-    @Override public void stop() {
-        if (vehicle() == null) super.stop();
-    }
-
-    @Override public boolean isAtDestination() {
-        VehicleEntity tank = vehicle();
+    @Override public boolean canUse() { return tank() != null ? moveTarget != null : super.canUse(); }
+    @Override public boolean canContinueToUse() { return tank() != null ? moveTarget != null : super.canContinueToUse(); }
+    @Override public void start() { if (tank() == null) super.start(); }
+    @Override public void stop() { if (tank() == null) super.stop(); }
+    @Override
+    public boolean isAtDestination() {
+        VehicleEntity tank = tank();
         if (tank == null) return super.isAtDestination();
         if (moveTarget == null) return true;
         double dx = tank.getX() - (moveTarget.getX() + 0.5);
@@ -55,39 +62,92 @@ public final class TankMoveGoal extends MoveToTargetBlockGoal {
         return dx * dx + dz * dz <= 25;
     }
 
-    @Override public void stopMoving() {
-        VehicleEntity tank = vehicle();
+    @Override
+    public void stopMoving() {
+        VehicleEntity tank = tank();
         if (tank == null) super.stopMoving();
         else {
             moveTarget = null;
             tank.processInput((short) 0);
+            previousTankPosition = null;
+            noProgressTicks = 0;
         }
     }
 
-    @Override public void tick() {
-        if (vehicle() == null) super.tick();
+    @Override
+    public void tick() {
+        if (tank() == null) super.tick();
+        // Server-level RTS driver ticks independently of passenger AI goals.
     }
 
-    /** Called by commander.tick(), so movement works even if mounted mob AI goals pause. */
+    /** Called on the server every level tick; never relies on passenger AI ticking. */
     public void driveTank() {
-        VehicleEntity tank = vehicle();
+        VehicleEntity tank = tank();
         if (tank == null) return;
-        if (moveTarget == null || tank.getFirstPassenger() != commander) {
+        long worldTick = tank.level().getGameTime();
+        if (lastDriveTick == worldTick) return;
+        lastDriveTick = worldTick;
+        if (moveTarget == null) {
+            tank.processInput((short) 0);
+            previousTankPosition = tank.position();
+            noProgressTicks = 0;
+            return;
+        }
+        if (!tank.getPassengers().contains(commander)) {
+            RonTacZ.LOGGER.warn("M1A2 driver {} is no longer in tank {}", commander.getId(), tank.getId());
+            return;
+        }
+        if (tank.isWreck()) {
             tank.processInput((short) 0);
             return;
         }
-        double dx = (moveTarget.getX() + 0.5) - tank.getX();
-        double dz = (moveTarget.getZ() + 0.5) - tank.getZ();
-        double d2 = dx * dx + dz * dz;
-        if (d2 <= 25) { stopMoving(); return; }
 
-        float desired = (float) Math.toDegrees(Math.atan2(-dx, dz));
-        float diff = Mth.wrapDegrees(desired - tank.getYRot());
-        short input = 0;
-        // SBW tracked engine: left -> yaw increases, right -> yaw decreases.
-        if (diff > 8f) input |= 1;
-        else if (diff < -8f) input |= 2;
-        if (Math.abs(diff) < 65f) input |= 4;
-        tank.processInput(input);
+        // Restore energy so the prototype can be tested without refuelling.
+        if (tank.getEnergy() < 10000) tank.setEnergy(tank.getMaxEnergy());
+        tank.setEngineStart(true);
+        tank.setEngineStartOver(true);
+
+        double dx = moveTarget.getX() + 0.5 - tank.getX();
+        double dz = moveTarget.getZ() + 0.5 - tank.getZ();
+        double d2 = dx * dx + dz * dz;
+        if (d2 <= 25) {
+            stopMoving();
+            return;
+        }
+
+        float desiredYaw = (float) Math.toDegrees(Math.atan2(-dx, dz));
+        float deltaYaw = Mth.wrapDegrees(desiredYaw - tank.getYRot());
+        short keys = 0;
+        // Positive yaw correction means LEFT; SBW tracked engine adjusts yaw this way.
+        if (deltaYaw > 7f) keys |= 1;
+        else if (deltaYaw < -7f) keys |= 2;
+        if (Math.abs(deltaYaw) < 75f) keys |= 4;
+        tank.processInput(keys);
+
+        Vec3 current = tank.position();
+        if (previousTankPosition != null
+                && current.subtract(previousTankPosition).horizontalDistanceSqr() < 0.0004) {
+            noProgressTicks++;
+        } else noProgressTicks = 0;
+        previousTankPosition = current;
+
+        // Safety fallback for SBW builds where non-player driver inputs do not advance
+        // the chassis. Respect SBW's collision-aware Entity.move implementation.
+        if (noProgressTicks > 45) {
+            if (!warnedFallback) {
+                warnedFallback = true;
+                RonTacZ.LOGGER.warn("M1A2 {} not moving despite RTS order, using collision-aware driver fallback; seat={} energy={} engineInfo={} target={}",
+                    tank.getId(), tank.getSeatIndex(commander), tank.getEnergy(),
+                    tank.getEngineInfo() != null, moveTarget);
+            }
+            tank.setYRot(Mth.approachDegrees(tank.getYRot(), desiredYaw, 4f));
+            if (Math.abs(Mth.wrapDegrees(desiredYaw - tank.getYRot())) < 24f) {
+                double invDist = 1.0 / Math.sqrt(d2);
+                Vec3 step = new Vec3(dx * invDist * 0.10, 0, dz * invDist * 0.10);
+                tank.move(MoverType.SELF, step);
+                tank.setDeltaMovement(tank.getDeltaMovement().add(step.scale(0.04)));
+                tank.hasImpulse = true;
+            }
+        }
     }
 }

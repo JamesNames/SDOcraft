@@ -1,4 +1,4 @@
-# RoN x TaCZ x Superb Warfare v0.2.1
+# RoN x TaCZ x Superb Warfare v0.2.2
 Minecraft Forge 1.20.1
 Required mods: Reign of Nether 1.5.0b, TaCZ 1.1.8-hotfix2, Superb Warfare **0.8.9.2** (file 9019882), Kotlin for Forge 4.12.0.
 
@@ -18,3 +18,10 @@ Install resulting JAR on both client/server alongside dependencies.
 - Tank steering is driven in the unit tick and has corrected turning direction.
 - Crew outside the tank uses vanilla/RTS navigation, not tank-only movement.
 - Tank navigation is direct heading, not obstacle-aware.
+
+## v0.2.2: M1A2 vehicle driver
+- Drive commands processed every server level tick, independent of mounted mob goal ticking.
+- M1A2 engine input on correct tracked vehicle left/right yaw directions.
+- If tank does not physically advance despite valid orders, a slow collision-aware vehicle movement fallback engages after 45 ticks.
+- Info on move orders and fallback in `latest.log` under `M1A2 RTS`.
+- Avoid obstacles: full vehicle obstacle pathfinding is not implemented.

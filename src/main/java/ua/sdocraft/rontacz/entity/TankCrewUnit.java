@@ -46,7 +46,7 @@ public final class TankCrewUnit extends RiflemanUnit {
         if (!tank.getEngineStart()) tank.setEngineStart(true);
         if (!tank.getEngineStartOver()) tank.setEngineStartOver(true);
         if (tickCount % 100 == 0) tank.setEnergy(tank.getMaxEnergy());
-        if (tankMoveGoal != null) tankMoveGoal.driveTank();
+        // Driving is handled once per server level tick by TankServerEvents.
         LivingEntity target=getTarget();
         tank.setAiTurretTargetUUID(target != null && target.isAlive() ? target.getStringUUID() : "undefined");
         // Test-load ammunition if there is none: native SBW firing remains authoritative.
