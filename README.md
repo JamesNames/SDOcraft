@@ -176,3 +176,11 @@ and automatic war in single-player are not yet implemented.
 - Javelin now attacks ONLY explicitly ordered enemy tank crews and resolves the genuine tank vehicle hitbox for line of sight, rather than the rider inside.
 - Real Javelin missiles retain the clicked vehicle UUID for up to six seconds of flight; tracking is not transferred to other arbitrary/friendly tanks.
 - World backup recommended before building large structures. A completely invalid red placement preview is a separate placement issue. Live-game results still require testing.
+
+### v0.5.5 — Vehicle Hangar blueprint start fix
+- Fixed a hard blocker: the vanilla RoN Blacksmith's starting block types were OAK_PLANKS and COBBLESTONE, while the custom Quonset hangar foundation was SMOOTH_STONE and POLISHED_DEEPSLATE; only scaffold blocks were queued and the empty building could be destroyed.
+- The Blacksmith constructor now registers our real floor material types as starter blocks so the actual hangar foundation builds immediately.
+- One-time fallback queues every missing solid blueprint block (preserving existing scaffolding) for each unfinished hangar, including older partially-built hangars after world reload. Builds with RoN's normal block placement, up to four blocks per tick, and no resource charge.
+- Barracks blueprint, hangar geometry, existing infantry and vehicle production are unchanged.
+- If an earlier hangar has already been fully removed by RoN, place it again after installing this version. Back up the save before updating.
+- Build only validates compilation; confirm hangar visually in-game and supply latest.log if it still disappears.

@@ -10,7 +10,8 @@
     "MilitaryBarracksMixin",
     "VehicleHangarSpawnMixin",
     "VehicleHangarLabelMixin",
-    "MilitaryConstructionFallbackMixin"
+    "MilitaryConstructionFallbackMixin",
+    "VehicleHangarFoundationMixin"
   ],
   "injectors": {
     "defaultRequire": 1
