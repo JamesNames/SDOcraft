@@ -40,7 +40,7 @@ public abstract class RTSHelicopterPhysicsMixin {
     /** Invoked for the inherited Entity.move call in SBW's baseTick(). */
     @Redirect(method = "baseTick", at = @At(value = "INVOKE",
         target = "Lcom/atsuishio/superbwarfare/entity/vehicle/base/VehicleEntity;move(Lnet/minecraft/world/entity/MoverType;Lnet/minecraft/world/phys/Vec3;)V",
-        remap = true), require = 0, remap = false)
+        remap = true), require = 0, remap = true)
     private void rontacz$skipSecondMovement(VehicleEntity heli, MoverType mover, Vec3 movement) {
         if (!isRTSMi28(heli)) heli.move(mover, movement);
         else heli.setDeltaMovement(Vec3.ZERO);
@@ -49,8 +49,9 @@ public abstract class RTSHelicopterPhysicsMixin {
     /** Some Forge runtime versions reference Entity.move() rather than VehicleEntity.move(). */
     @Redirect(method = "baseTick", at = @At(value = "INVOKE",
         target = "Lnet/minecraft/world/entity/Entity;move(Lnet/minecraft/world/entity/MoverType;Lnet/minecraft/world/phys/Vec3;)V",
-        remap = true), require = 0, remap = false)
-    private void rontacz$skipEntitySecondMovement(VehicleEntity heli, MoverType mover, Vec3 movement) {
+        remap = true), require = 0, remap = true)
+    private void rontacz$skipEntitySecondMovement(net.minecraft.world.entity.Entity entity, MoverType mover, Vec3 movement) {
+        VehicleEntity heli = (VehicleEntity)entity;
         if (!isRTSMi28(heli)) heli.move(mover, movement);
         else heli.setDeltaMovement(Vec3.ZERO);
     }
